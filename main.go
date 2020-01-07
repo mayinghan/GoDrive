@@ -1,7 +1,7 @@
 package main
 
 import (
-	"GoDisk/handler"
+	"GoDisk/controller"
 	"fmt"
 	"log"
 	"net/http"
@@ -12,6 +12,7 @@ func listenHandler() {
 }
 
 func main() {
-	http.HandleFunc("/file/upload", handler.UploadHandler)
+	http.HandleFunc("/file/upload", controller.UploadHandler)
+	http.HandleFunc("/file/upload/success", controller.UploadSuccessHandler)
 	log.Fatal(http.ListenAndServe(":8080", nil))
 }
