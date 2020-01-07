@@ -6,7 +6,7 @@ import (
 	"net/http"
 )
 
-// Handling file upload
+// UploadHandler Handling file upload
 func UploadHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "GET" {
 		// return upload file page
