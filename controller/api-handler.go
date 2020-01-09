@@ -47,7 +47,8 @@ func UploadHandler(w http.ResponseWriter, r *http.Request) {
 			fmt.Printf("Failed to copy content to temp file %s\n", err)
 			return
 		}
-
+		// move the seek of new file to the start point
+		newFile.Seek(0, 0)
 		// update file meta hashmap
 		fileMeta.FileSha1 = utils.FileSHA1(newFile)
 		meta.UpdateFileMeta(fileMeta)
