@@ -24,3 +24,14 @@ func UpdateFileMeta(fm FileMeta) {
 func GetFileMeta(sha1 string) FileMeta {
 	return fileMetas[sha1]
 }
+
+// GetLastFileMetas : get the last `count` files' meta datas
+func GetLastFileMetas(count int) []FileMeta {
+	fMetaArray := make([]FileMeta, len(fileMetas))
+	for _, v := range fileMetas {
+		fMetaArray = append(fMetaArray, v)
+	}
+	// sorted by 'uploadAt'
+
+	return nil
+}

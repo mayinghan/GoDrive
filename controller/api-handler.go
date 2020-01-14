@@ -3,11 +3,13 @@ package controller
 import (
 	"GoDisk/meta"
 	"GoDisk/utils"
+	"encoding/json"
 	"fmt"
 	"io"
 	"io/ioutil"
 	"net/http"
 	"os"
+	"strconv"
 	"time"
 )
 
@@ -60,5 +62,31 @@ func UploadHandler(w http.ResponseWriter, r *http.Request) {
 
 // UploadSuccessHandler will return content when upload successfully
 func UploadSuccessHandler(w http.ResponseWriter, r *http.Request) {
-	io.WriteString(w, "Upload Successfully")
+	io.WriteString(w, "Upload Successfully!")
+}
+
+// GetFileMetaHandler gets the meta data of the given file from request.form
+func GetFileMetaHandler(w http.ResponseWriter, r *http.Request) {
+	r.ParseForm()
+	fmt.Printf("%v\n", r)
+	filehash := r.Form["filehash"][0]
+	filemeta := meta.GetFileMeta(filehash)
+
+	data, err := json.Marshal(filemeta)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	w.Write(data)
+}
+
+// FilesLookupHandler : query the last `n` files' info
+func FilesLookupHandler(w http.ResponseWriter, r *http.Request) {
+	r.ParseForm()
+
+	// "limit": how many files the user want to query
+	count, _ := strconv.Atoi(r.Form.Get("limit"))
+	meta.GetLastFileMetas(count)
+	// @TODO: finish this function
 }

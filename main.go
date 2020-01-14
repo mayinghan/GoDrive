@@ -14,5 +14,6 @@ func listenHandler() {
 func main() {
 	http.HandleFunc("/file/upload", controller.UploadHandler)
 	http.HandleFunc("/file/upload/success", controller.UploadSuccessHandler)
-	log.Fatal(http.ListenAndServe(":8080", nil))
+	http.HandleFunc("/file/meta", controller.GetFileMetaHandler)
+	log.Fatal(http.ListenAndServe(":5050", nil))
 }
