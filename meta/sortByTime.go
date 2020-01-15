@@ -1,14 +1,13 @@
-package utils
+package meta
 
 import (
-	"GoDisk/meta"
 	"time"
 )
 
 const base = "2006-01-02 15:04:05"
 
 // SortedByUploadTime : a slice of FileMetas sorted by uploaded time
-type SortedByUploadTime []meta.FileMeta
+type SortedByUploadTime []FileMeta
 
 /**
 Implement the comparator interface

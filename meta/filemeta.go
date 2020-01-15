@@ -1,5 +1,7 @@
 package meta
 
+import "sort"
+
 // FileMeta contains file meta info struct
 type FileMeta struct {
 	FileSha1 string
@@ -32,6 +34,6 @@ func GetLastFileMetas(count int) []FileMeta {
 		fMetaArray = append(fMetaArray, v)
 	}
 	// sorted by 'uploadAt'
-
-	return nil
+	sort.Sort(SortedByUploadTime(fMetaArray))
+	return fMetaArray[0:count]
 }
