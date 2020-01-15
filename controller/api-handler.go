@@ -81,12 +81,20 @@ func GetFileMetaHandler(w http.ResponseWriter, r *http.Request) {
 	w.Write(data)
 }
 
-// FilesLookupHandler : query the last `n` files' info
-func FilesLookupHandler(w http.ResponseWriter, r *http.Request) {
+// QueryByBatchHandler : query the last `n` files' info. Query file meta by batch.
+func QueryByBatchHandler(w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()
 
 	// "limit": how many files the user want to query
 	count, _ := strconv.Atoi(r.Form.Get("limit"))
-	meta.GetLastFileMetas(count)
-	// @TODO: finish this function
+	fMetas := meta.GetLastFileMetas(count)
+
+	// return to client as a JSON
+	data, err := json.Marshal(fMetas)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	w.Write(data)
 }

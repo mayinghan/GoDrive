@@ -29,11 +29,11 @@ func GetFileMeta(sha1 string) FileMeta {
 
 // GetLastFileMetas : get the last `count` files' meta datas
 func GetLastFileMetas(count int) []FileMeta {
-	fMetaArray := make([]FileMeta, len(fileMetas))
+	fMetaSlice := make([]FileMeta, len(fileMetas))
 	for _, v := range fileMetas {
-		fMetaArray = append(fMetaArray, v)
+		fMetaSlice = append(fMetaSlice, v)
 	}
 	// sorted by 'uploadAt'
-	sort.Sort(SortedByUploadTime(fMetaArray))
-	return fMetaArray[0:count]
+	sort.Sort(SortedByUploadTime(fMetaSlice))
+	return fMetaSlice[0:count]
 }
