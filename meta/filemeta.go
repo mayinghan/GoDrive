@@ -1,6 +1,8 @@
 package meta
 
-import "sort"
+import (
+	"sort"
+)
 
 // FileMeta contains file meta info struct
 type FileMeta struct {
@@ -13,6 +15,7 @@ type FileMeta struct {
 
 var fileMetas map[string]FileMeta
 
+// when import this package, init() will be called
 func init() {
 	fileMetas = make(map[string]FileMeta)
 }
@@ -29,6 +32,7 @@ func GetFileMeta(sha1 string) FileMeta {
 
 // GetLastFileMetas : get the last `count` files' meta datas
 func GetLastFileMetas(count int) []FileMeta {
+	count = minInt(count, len(fileMetas))
 	fMetaSlice := make([]FileMeta, len(fileMetas))
 	for _, v := range fileMetas {
 		fMetaSlice = append(fMetaSlice, v)
@@ -36,4 +40,11 @@ func GetLastFileMetas(count int) []FileMeta {
 	// sorted by 'uploadAt'
 	sort.Sort(SortedByUploadTime(fMetaSlice))
 	return fMetaSlice[0:count]
+}
+
+func minInt(a, b int) int {
+	if a < b {
+		return a
+	}
+	return b
 }

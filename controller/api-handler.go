@@ -98,3 +98,30 @@ func QueryByBatchHandler(w http.ResponseWriter, r *http.Request) {
 
 	w.Write(data)
 }
+
+// DownloadHandler : download file
+func DownloadHandler(w http.ResponseWriter, r *http.Request) {
+	r.ParseForm()
+
+	fsha1 := r.Form.Get("filehash")
+	metaInfo := meta.GetFileMeta(fsha1)
+
+	f, err := os.Open(metaInfo.Location)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	defer f.Close()
+
+	// read file into RAM. Assuming the file size is not large
+	data, err := ioutil.ReadAll(f)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "appllication/octect-stream")
+	w.Header().Set("Content-Disposition", "attatchment; filename=\""+metaInfo.FileName+"\"")
+	w.Write(data)
+}

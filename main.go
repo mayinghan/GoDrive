@@ -16,5 +16,6 @@ func main() {
 	http.HandleFunc("/file/upload/success", controller.UploadSuccessHandler)
 	http.HandleFunc("/file/meta", controller.GetFileMetaHandler)
 	http.HandleFunc("/file/query", controller.QueryByBatchHandler)
+	http.HandleFunc("/file/download", controller.DownloadHandler)
 	log.Fatal(http.ListenAndServe(":5050", nil))
 }
