@@ -71,3 +71,7 @@ you should see these two terms in the table:
 Slave_IO_Running: Yes 
 Slave_SQL_Running: Yes 
 ```
+
+-----------------------
+* Author: Yinghan Ma (mayinghan97@gmail.com)
+* Issue: Open an Issue or contact the author
