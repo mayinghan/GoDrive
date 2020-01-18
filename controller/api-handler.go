@@ -125,3 +125,46 @@ func DownloadHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Disposition", "attatchment; filename=\""+metaInfo.FileName+"\"")
 	w.Write(data)
 }
+
+// FileUpdateHandler : rename file
+func FileUpdateHandler(w http.ResponseWriter, r *http.Request) {
+	// only accept post request
+	if r.Method != "POST" {
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		return
+	}
+
+	r.ParseForm()
+
+	operationType := r.Form.Get("op") // for future use: expand operation type to not only renaming file
+	fileSha1 := r.Form.Get("filehash")
+	newFileName := r.Form.Get("filename")
+
+	if operationType != "update-name" {
+		w.WriteHeader(http.StatusForbidden)
+		return
+	}
+
+	currFileMeta := meta.GetFileMeta(fileSha1)
+	currFileMeta.FileName = newFileName
+	meta.UpdateFileMeta(currFileMeta)
+
+	data, err := json.Marshal(currFileMeta)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	w.Write(data)
+}
+
+// FileDeleteHandler : delete the file
+func FileDeleteHandler(w http.ResponseWriter, r *http.Request) {
+	r.ParseForm()
+	fileSha1 := r.Form.Get("filehash")
+	fileMeta := meta.GetFileMeta(fileSha1)
+	os.Remove(fileMeta.Location)
+	meta.RemoveMeta(fileSha1)
+	w.WriteHeader(http.StatusOK)
+}
