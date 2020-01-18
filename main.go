@@ -17,5 +17,7 @@ func main() {
 	http.HandleFunc("/file/meta", controller.GetFileMetaHandler)
 	http.HandleFunc("/file/query", controller.QueryByBatchHandler)
 	http.HandleFunc("/file/download", controller.DownloadHandler)
+	http.HandleFunc("/file/update", controller.FileUpdateHandler)
+	http.HandleFunc("/file/delete", controller.FileDeleteHandler)
 	log.Fatal(http.ListenAndServe(":5050", nil))
 }

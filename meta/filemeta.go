@@ -42,6 +42,11 @@ func GetLastFileMetas(count int) []FileMeta {
 	return fMetaSlice[0:count]
 }
 
+// RemoveMeta : remove the file meta, in the future, need to consider about multithreading security
+func RemoveMeta(fileSha1 string) {
+	delete(fileMetas, fileSha1)
+}
+
 func minInt(a, b int) int {
 	if a < b {
 		return a
