@@ -11,6 +11,6 @@ CREATE TABLE `tbl_file`
   `status` int NOT NULL DEFAULT 0 COMMENT 'status code(available/delete/banned)',
   `ext1` text COMMENT 'backup info, not neccessarilly gonna be used',
   PRIMARY KEY (`id`),
-  UNIQUE KEY `idx_file_hash` (`file_sha1`),
+  UNIQUE KEY `idx_file_hash` (`sha1`),
   key `idx_status` (`status`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
