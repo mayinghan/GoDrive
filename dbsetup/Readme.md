@@ -20,8 +20,8 @@ Create local DB directories. They will mount to the DBs in the docker.
 build and start the docker containers
 
 ```
-sudo docker-compose build
-sudo docker-compose up -d
+docker-compose build
+docker-compose up -d
 ```
 
 The master node is binded to port 13306, the slave node is binded to port 13307.
