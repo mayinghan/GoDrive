@@ -13,4 +13,4 @@ CREATE TABLE `tbl_file`
   PRIMARY KEY (`id`),
   UNIQUE KEY `idx_file_hash` (`file_sha1`),
   key `idx_status` (`status`)
-)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
