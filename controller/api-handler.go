@@ -34,7 +34,7 @@ func UploadHandler(w http.ResponseWriter, r *http.Request) {
 
 		fileMeta := meta.FileMeta{
 			FileName: head.Filename,
-			Location: "/tmp/" + head.Filename,
+			Location: "C://Users/liuwi/Desktop/tmp/" + head.Filename,
 			UploadAt: time.Now().Format("2006-01-02 15:04:05"),
 		}
 		newFile, err := os.Create(fileMeta.Location)
@@ -56,12 +56,22 @@ func UploadHandler(w http.ResponseWriter, r *http.Request) {
 		meta.UpdateFileMeta(fileMeta)
 		// io.WriteString(w, "Upload Successfully")
 		// redirect to /success
+
+		js, err := json.Marshal(fileMeta)
+		if err != nil {
+			fmt.Printf("Failed to create json file %s\n", err)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		w.Write(js)
+
 		http.Redirect(w, r, "/file/upload/success", http.StatusFound)
 	}
 }
 
-// UploadSuccessHandler will return content when upload successfully
+// UploadSuccessHandler will return content when upload successfully and returns a json file
 func UploadSuccessHandler(w http.ResponseWriter, r *http.Request) {
+
 	io.WriteString(w, "Upload Successfully!")
 }
 

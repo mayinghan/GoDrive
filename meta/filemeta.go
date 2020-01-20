@@ -6,11 +6,11 @@ import (
 
 // FileMeta contains file meta info struct
 type FileMeta struct {
-	FileSha1 string
-	FileName string
-	FileSize int64
-	Location string
-	UploadAt string
+	FileSha1 string `json:"FileSha1"`
+	FileName string `json:"FileName"`
+	FileSize int64  `json:"FileSize"`
+	Location string `json:"Location"`
+	UploadAt string `json:"UploadAt"`
 }
 
 var fileMetas map[string]FileMeta
