@@ -1,7 +1,7 @@
 package main
 
 import (
-	"GoDisk/controller"
+	"GoDrive/controller"
 	"fmt"
 	"log"
 	"net/http"

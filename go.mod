@@ -1,4 +1,4 @@
-module GoDisk
+module GoDrive
 
 go 1.13
 

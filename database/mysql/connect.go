@@ -27,7 +27,7 @@ func init() {
 	}
 }
 
-// DBConnection : return the mysql connection obj
-func DBConnection() *sql.DB {
+// DBConn : return the mysql connection obj
+func DBConn() *sql.DB {
 	return db
 }

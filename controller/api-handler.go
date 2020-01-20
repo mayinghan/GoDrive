@@ -1,8 +1,8 @@
 package controller
 
 import (
-	"GoDisk/meta"
-	"GoDisk/utils"
+	"GoDrive/meta"
+	"GoDrive/utils"
 	"encoding/json"
 	"fmt"
 	"io"
