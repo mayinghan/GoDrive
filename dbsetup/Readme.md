@@ -74,7 +74,7 @@ Slave_SQL_Running: Yes
 ## Step 4
 Go to mysql-master and create database ```fileserver```
 ```sql
-CREATE DATABASE fileserver;
+create database fileserver default character set utf8;;
 ```
 
 
