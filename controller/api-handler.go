@@ -1,8 +1,8 @@
 package controller
 
 import (
-	"GoDisk/meta"
-	"GoDisk/utils"
+	"GoDrive/meta"
+	"GoDrive/utils"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -159,7 +159,7 @@ func FileUpdateHandler(w http.ResponseWriter, r *http.Request) {
 	w.Write(data)
 }
 
-// FileDeleteHandler : delete the file
+// FileDeleteHandler : delete the file (soft-delete by using a flag)
 func FileDeleteHandler(w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()
 	fileSha1 := r.Form.Get("filehash")
