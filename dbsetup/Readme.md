@@ -71,6 +71,12 @@ you should see these two terms in the table:
 Slave_IO_Running: Yes 
 Slave_SQL_Running: Yes 
 ```
+## Step 4
+Go to mysql-master and create database ```fileserver```
+```sql
+CREATE DATABASE fileserver;
+```
+
 
 -----------------------
 * Author: Yinghan Ma (mayinghan97@gmail.com)
