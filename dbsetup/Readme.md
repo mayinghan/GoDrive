@@ -20,8 +20,8 @@ Create local DB directories. They will mount to the DBs in the docker.
 build and start the docker containers
 
 ```
-docker-compose build
-docker-compose up -d
+sudo docker-compose build
+sudo docker-compose up -d
 ```
 
 The master node is binded to port 13306, the slave node is binded to port 13307.
@@ -32,7 +32,7 @@ The default password for both db's root is ```123456```.
 Enter mysql-master:
 
 ```
-mysql -u root -h 127.0.0.1 -P 13306 -p 123456
+mysql -u root -h 127.0.0.1 -P 13306 -p
 ```
 
 Then run
@@ -55,7 +55,7 @@ You should see something like this:
 ## Step 3
 Enter mysql-slave:
 ```
-mysql -u root -h 127.0.0.1 -P 13307 -p 123456
+mysql -u root -h 127.0.0.1 -P 13307 -p
 ```
 
 Then run
