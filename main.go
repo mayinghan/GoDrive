@@ -5,19 +5,19 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+
+	"github.com/gorilla/mux"
 )
 
-func listenHandler() {
-	fmt.Printf("Server running on 127.0.0.1:8080")
-}
-
 func main() {
-	http.HandleFunc("/file/upload", controller.UploadHandler)
-	http.HandleFunc("/file/upload/success", controller.UploadSuccessHandler)
-	http.HandleFunc("/file/meta", controller.GetFileMetaHandler)
-	http.HandleFunc("/file/query", controller.QueryByBatchHandler)
-	http.HandleFunc("/file/download", controller.DownloadHandler)
-	http.HandleFunc("/file/update", controller.FileUpdateHandler)
-	http.HandleFunc("/file/delete", controller.FileDeleteHandler)
-	log.Fatal(http.ListenAndServe(":5050", nil))
+	fmt.Printf("The server running on 127.0.0.1:5050")
+	router := mux.NewRouter().StrictSlash(true)
+	router.HandleFunc("/file/upload", controller.UploadHandler)
+	router.HandleFunc("/file/upload/success", controller.UploadSuccessHandler)
+	router.HandleFunc("/file/meta", controller.GetFileMetaHandler)
+	router.HandleFunc("/file/query", controller.QueryByBatchHandler)
+	router.HandleFunc("/file/download", controller.DownloadHandler)
+	router.HandleFunc("/file/update", controller.FileUpdateHandler)
+	router.HandleFunc("/file/delete", controller.FileDeleteHandler)
+	log.Fatal(http.ListenAndServe(":5050", router))
 }
