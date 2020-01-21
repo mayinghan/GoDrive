@@ -5,6 +5,14 @@ import (
 	"fmt"
 )
 
+// TableFile : a struct that correspond to a file's info in the database
+type TableFile struct {
+	FileHash     string
+	FileName     string
+	FileSize     int64
+	FileLocation string
+}
+
 // OnFileUploadFinished returns a bool after the file is uploaded to db
 func OnFileUploadFinished(filehash string, filename string, filesize int64, filelocation string) bool {
 	// using prepared statement to prevent
@@ -38,4 +46,10 @@ func OnFileUploadFinished(filehash string, filename string, filesize int64, file
 	}
 
 	return false
+}
+
+// GetFileMeta : query from the DB and return the TableFile
+func GetFileMeta(filehash string) (*TableFile, error) {
+	// `TODO: implement this function
+	return &TableFile{}, nil
 }
