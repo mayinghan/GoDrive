@@ -1,6 +1,7 @@
 package meta
 
 import (
+	"GoDrive/database"
 	"sort"
 )
 
@@ -20,9 +21,14 @@ func init() {
 	fileMetas = make(map[string]FileMeta)
 }
 
-// UpdateFileMeta : add/modify file meta info
+// UpdateFileMeta : add/modify file meta info in RAM
 func UpdateFileMeta(fm FileMeta) {
 	fileMetas[fm.FileSha1] = fm
+}
+
+// UpdateFileMetaDB : add/modify file meta into DB
+func UpdateFileMetaDB(fm FileMeta) bool {
+	return database.OnFileUploadFinished(fm.FileSha1, fm.FileName, fm.FileSize, fm.Location)
 }
 
 // GetFileMeta : get FileMeta struct based on give SHA1 hash code

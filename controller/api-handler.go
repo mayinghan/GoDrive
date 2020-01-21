@@ -25,6 +25,7 @@ func UploadHandler(w http.ResponseWriter, r *http.Request) {
 		io.WriteString(w, string(page))
 	} else if r.Method == "POST" {
 		// get a file stream and save into local fs
+		// fmt.Printf("%v\n", r)
 		file, head, err := r.FormFile("file")
 		if err != nil {
 			fmt.Printf("Failed to get file %s\n", err.Error())
@@ -34,7 +35,7 @@ func UploadHandler(w http.ResponseWriter, r *http.Request) {
 
 		fileMeta := meta.FileMeta{
 			FileName: head.Filename,
-			Location: "C://Users/liuwi/Desktop/tmp/" + head.Filename,
+			Location: "/tmp/" + head.Filename,
 			UploadAt: time.Now().Format("2006-01-02 15:04:05"),
 		}
 		newFile, err := os.Create(fileMeta.Location)
@@ -53,7 +54,10 @@ func UploadHandler(w http.ResponseWriter, r *http.Request) {
 		newFile.Seek(0, 0)
 		// update file meta hashmap
 		fileMeta.FileSha1 = utils.FileSHA1(newFile)
-		meta.UpdateFileMeta(fileMeta)
+		//debug
+		fmt.Printf("%v\n", fileMeta)
+		// upload meta data to DB
+		_ = meta.UpdateFileMetaDB(fileMeta)
 		// io.WriteString(w, "Upload Successfully")
 		// redirect to /success
 
@@ -65,13 +69,12 @@ func UploadHandler(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.Write(js)
 
-		http.Redirect(w, r, "/file/upload/success", http.StatusFound)
+		// http.Redirect(w, r, "/file/upload/success", http.StatusFound)
 	}
 }
 
 // UploadSuccessHandler will return content when upload successfully and returns a json file
 func UploadSuccessHandler(w http.ResponseWriter, r *http.Request) {
-
 	io.WriteString(w, "Upload Successfully!")
 }
 

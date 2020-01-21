@@ -1,7 +1,7 @@
 package database
 
 import (
-	myDB "GoDrive/database/mysql"
+	"GoDrive/database/mydb"
 	"fmt"
 )
 
@@ -16,11 +16,11 @@ type TableFile struct {
 // OnFileUploadFinished returns a bool after the file is uploaded to db
 func OnFileUploadFinished(filehash string, filename string, filesize int64, filelocation string) bool {
 	// using prepared statement to prevent
-	statement, err := myDB.DBConn().Prepare(
+	statement, err := mydb.DBConn().Prepare(
 		/* insert ignore: if an error occured during a bacth of insertions,
 		only the one with error will fail, the rest of insertions will succeed.
 		*/
-		"insert ignore into tbl_file (`sha1`, `name`, `size`, `location`, `status`)" +
+		"insert ignore into tbl_file (`sha1`, `name`, `size`, `location`, `status`) " +
 			"values (?,?,?,?,0)",
 	)
 
