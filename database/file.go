@@ -50,6 +50,25 @@ func OnFileUploadFinished(filehash string, filename string, filesize int64, file
 
 // GetFileMeta : query from the DB and return the TableFile
 func GetFileMeta(filehash string) (*TableFile, error) {
-	// `TODO: implement this function
-	return &TableFile{}, nil
+	// using prepared statement to query from the DB
+	statement, err := mydb.DBConn().Prepare(
+		"select fileHash, fileName, fileSize, fileLocation from tbl_file where fileHash = ?")
+
+	if err != nil {
+		fmt.Println("Failed to prepare statement, err: " + err.Error())
+		return nil, err
+	}
+
+	defer statement.Close()
+
+	var metaFile TableFile
+	err = statement.QueryRow(filehash).Scan(
+		&metaFile.FileHash, &metaFile.FileName, &metaFile.FileSize, &metaFile.FileLocation)
+
+	if err != nil {
+		fmt.Println(err.Error())
+		return nil, err
+	}
+
+	return &metaFile, nil
 }
