@@ -52,7 +52,7 @@ func OnFileUploadFinished(filehash string, filename string, filesize int64, file
 func GetFileMeta(filehash string) (*TableFile, error) {
 	// using prepared statement to query from the DB
 	statement, err := mydb.DBConn().Prepare(
-		"select fileHash, fileName, fileSize, fileLocation from tbl_file where fileHash = ?")
+		"select sha1, name, size, location from tbl_file where fileHash = ? and status=0 limit 1")
 
 	if err != nil {
 		fmt.Println("Failed to prepare statement, err: " + err.Error())
