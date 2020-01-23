@@ -83,7 +83,10 @@ func GetFileMetaHandler(w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()
 	fmt.Printf("%v\n", r)
 	filehash := r.Form["filehash"][0]
-	filemeta := meta.GetFileMeta(filehash)
+	filemeta, err := meta.GetFileMetaDB(filehash)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+	}
 
 	data, err := json.Marshal(filemeta)
 	if err != nil {

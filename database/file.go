@@ -2,15 +2,16 @@ package database
 
 import (
 	"GoDrive/database/mydb"
+	"database/sql"
 	"fmt"
 )
 
 // TableFile : a struct that correspond to a file's info in the database
 type TableFile struct {
 	FileHash     string
-	FileName     string
-	FileSize     int64
-	FileLocation string
+	FileName     sql.NullString
+	FileSize     sql.NullInt64
+	FileLocation sql.NullString
 }
 
 // OnFileUploadFinished returns a bool after the file is uploaded to db
@@ -72,3 +73,8 @@ func GetFileMeta(filehash string) (*TableFile, error) {
 
 	return &metaFile, nil
 }
+
+// check if the file is already uploaded
+// func IsFileUploaded(filehash string) bool {
+// 	statement, err := mydb.DBConn().Prepare("select * from tbl_")
+// }
