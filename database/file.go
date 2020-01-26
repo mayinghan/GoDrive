@@ -74,7 +74,39 @@ func GetFileMeta(filehash string) (*TableFile, error) {
 	return &metaFile, nil
 }
 
-// check if the file is already uploaded
-// func IsFileUploaded(filehash string) bool {
-// 	statement, err := mydb.DBConn().Prepare("select * from tbl_")
-// }
+// IsFileUploaded : check if the file is already uploaded
+func IsFileUploaded(filehash string) (bool, error) {
+	statement, err := mydb.DBConn().Prepare("select 1 from tbl_file where sha1=? and status=0 limit 1")
+	if err != nil {
+		fmt.Println("Failed to prepare statement, err: " + err.Error())
+		return false, err
+	}
+
+	defer statement.Close()
+	rows, err := statement.Query(filehash)
+	if err != nil {
+		return false, err
+	} else if rows == nil || !rows.Next() {
+		return false, nil
+	}
+
+	return true, nil
+}
+
+// GetBatchFileMeta : get file metas by batch. param: batch size
+func GetBatchFileMeta(batchSize int) ([]TableFile, error) {
+	statement, err := mydb.DBConn().Prepare("select sha1, location, name, size from tbl_file where status=1 limit ?")
+	if err != nil {
+		fmt.Println("Failed to prepare statement, err: " + err.Error())
+		return nil, err
+	}
+
+	defer statement.Close()
+	// todo: query `limit`
+	return nil, nil
+}
+
+// OnFileRemoved : Use a delete flag to mark resources as deleted but not acctually deleted (change `status` from 0 to 1)
+func OnFileRemoved(filehash string) bool {
+	return false
+}
