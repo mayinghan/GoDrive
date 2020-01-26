@@ -20,4 +20,6 @@ func main() {
 	router.HandleFunc("/api/file/update", controller.FileUpdateHandler)
 	router.HandleFunc("/api/file/delete", controller.FileDeleteHandler)
 	log.Fatal(http.ListenAndServe(":5050", router))
+
+	http.Get("127.0.0.1:5100")
 }

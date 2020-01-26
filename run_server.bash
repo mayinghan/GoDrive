@@ -1,1 +1,1 @@
-gin -p 5100 -a 5050 run main.go
+gin -i -p 5100 -a 5050 run main.go
