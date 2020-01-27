@@ -13,6 +13,34 @@ import (
 	"time"
 )
 
+// FileMetaResponse contains the file meta info struct and error messages
+type FileMetaResponse struct {
+	FileMeta  meta.FileMeta `json:"meta"`
+	ErrorCode int64         `json:"code,omitempty"`
+	ErrorMsg  string        `json:"msg,omitempty"`
+}
+
+//returnErrorResponse creates a file meta reponse object that contains the error
+func returnErrorResponse(c int64, msg string) (fmr FileMetaResponse) {
+	fmr = FileMetaResponse{
+		FileMeta:  meta.FileMeta{},
+		ErrorCode: c,
+		ErrorMsg:  msg,
+	}
+	return
+}
+
+//returnJson writes Json message to front-end
+func returnJSON(w http.ResponseWriter, v interface{}) {
+	js, err := json.Marshal(v)
+	if err != nil {
+		fmt.Printf("Failed to create json file %s\n", err)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(js)
+}
+
 // UploadHandler handles file upload
 func UploadHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "GET" {
@@ -24,30 +52,37 @@ func UploadHandler(w http.ResponseWriter, r *http.Request) {
 		}
 		io.WriteString(w, string(page))
 	} else if r.Method == "POST" {
+		var fmr FileMetaResponse
 		// get a file stream and save into local fs
 		// fmt.Printf("%v\n", r)
 		file, head, err := r.FormFile("file")
 		if err != nil {
-			fmt.Printf("Failed to get file %s\n", err.Error())
+			fmr = returnErrorResponse(406, "could not receive file")
+			returnJSON(w, fmr)
+			return
+			//fmt.Printf("Failed to get file %s\n", err.Error())
 		}
 		// make sure the file handler is closed
 		defer file.Close()
 
 		fileMeta := meta.FileMeta{
 			FileName: head.Filename,
-			Location: "/tmp/" + head.Filename,
+			Location: "C://Users/liuwi/Desktop/tmp/" + head.Filename,
 			UploadAt: time.Now().Format("2006-01-02 15:04:05"),
 		}
 		newFile, err := os.Create(fileMeta.Location)
 		if err != nil {
-			fmt.Printf("Failed to create tmp file %s\n", err.Error())
+			fmr = returnErrorResponse(500, "failed to create tmp file for io")
+			returnJSON(w, fmr)
 			return
 		}
 		defer newFile.Close()
 
 		fileMeta.FileSize, err = io.Copy(newFile, file)
 		if err != nil {
-			fmt.Printf("Failed to copy content to temp file %s\n", err)
+			fmr = returnErrorResponse(500, "failed to copy content to tmp file")
+			returnJSON(w, fmr)
+			//fmt.Printf("Failed to copy content to temp file %s\n", err)
 			return
 		}
 		// move the seek of new file to the start point
@@ -55,20 +90,17 @@ func UploadHandler(w http.ResponseWriter, r *http.Request) {
 		// update file meta hashmap
 		fileMeta.FileSha1 = utils.FileSHA1(newFile)
 		//debug
-		fmt.Printf("%v\n", fileMeta)
+		//fmt.Printf("%v\n", fileMeta)
 		// upload meta data to DB
 		_ = meta.UpdateFileMetaDB(fileMeta)
 		// io.WriteString(w, "Upload Successfully")
 		// redirect to /success
-
-		js, err := json.Marshal(fileMeta)
-		if err != nil {
-			fmt.Printf("Failed to create json file %s\n", err)
-			return
+		fmr = FileMetaResponse{
+			FileMeta:  fileMeta,
+			ErrorCode: 201,
+			ErrorMsg:  "file successfully uploaded!",
 		}
-		w.Header().Set("Content-Type", "application/json")
-		w.Write(js)
-
+		returnJSON(w, fmr)
 		// http.Redirect(w, r, "/file/upload/success", http.StatusFound)
 	}
 }
@@ -87,7 +119,9 @@ func GetFileMetaHandler(w http.ResponseWriter, r *http.Request) {
 
 	data, err := json.Marshal(filemeta)
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
+		fmr := returnErrorResponse(500, "failed to get file meta from hash")
+		returnJSON(w, fmr)
+		//w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
@@ -105,7 +139,9 @@ func QueryByBatchHandler(w http.ResponseWriter, r *http.Request) {
 	// return to client as a JSON
 	data, err := json.Marshal(fMetas)
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
+		fmr := returnErrorResponse(500, "failed to query file information")
+		returnJSON(w, fmr)
+		//w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
@@ -121,7 +157,9 @@ func DownloadHandler(w http.ResponseWriter, r *http.Request) {
 
 	f, err := os.Open(metaInfo.Location)
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
+		fmr := returnErrorResponse(500, "failed to open file for download")
+		returnJSON(w, fmr)
+		//w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
@@ -130,7 +168,9 @@ func DownloadHandler(w http.ResponseWriter, r *http.Request) {
 	// read file into RAM. Assuming the file size is not large
 	data, err := ioutil.ReadAll(f)
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
+		fmr := returnErrorResponse(500, "failed to read file for download")
+		returnJSON(w, fmr)
+		//w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
@@ -143,7 +183,9 @@ func DownloadHandler(w http.ResponseWriter, r *http.Request) {
 func FileUpdateHandler(w http.ResponseWriter, r *http.Request) {
 	// only accept post request
 	if r.Method != "POST" {
-		w.WriteHeader(http.StatusMethodNotAllowed)
+		fmr := returnErrorResponse(405, "failed to update file. post request only")
+		returnJSON(w, fmr)
+		//w.WriteHeader(http.StatusMethodNotAllowed)
 		return
 	}
 
@@ -154,7 +196,9 @@ func FileUpdateHandler(w http.ResponseWriter, r *http.Request) {
 	newFileName := r.Form.Get("filename")
 
 	if operationType != "update-name" {
-		w.WriteHeader(http.StatusForbidden)
+		fmr := returnErrorResponse(403, "failed to update name")
+		returnJSON(w, fmr)
+		//w.WriteHeader(http.StatusForbidden)
 		return
 	}
 
@@ -162,14 +206,21 @@ func FileUpdateHandler(w http.ResponseWriter, r *http.Request) {
 	currFileMeta.FileName = newFileName
 	meta.UpdateFileMeta(currFileMeta)
 
-	data, err := json.Marshal(currFileMeta)
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		return
+	fmr := FileMetaResponse{
+		FileMeta:  currFileMeta,
+		ErrorCode: 201,
+		ErrorMsg:  "file successfully updated!",
 	}
+	returnJSON(w, fmr)
 
-	w.WriteHeader(http.StatusOK)
-	w.Write(data)
+	// data, err := json.Marshal(currFileMeta)
+	// if err != nil {
+	// 	w.WriteHeader(http.StatusInternalServerError)
+	// 	return
+	// }
+
+	//w.WriteHeader(http.StatusOK)
+	//w.Write(data)
 }
 
 // FileDeleteHandler : delete the file (soft-delete by using a flag)
