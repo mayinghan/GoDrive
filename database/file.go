@@ -100,7 +100,6 @@ func GetBatchFileMeta(batchSize int) ([]TableFile, error) {
 		fmt.Println("Failed to prepare statement, err: " + err.Error())
 		return nil, err
 	}
-
 	defer statement.Close()
 	// todo: query `limit`
 	return nil, nil
@@ -108,5 +107,21 @@ func GetBatchFileMeta(batchSize int) ([]TableFile, error) {
 
 // OnFileRemoved : Use a delete flag to mark resources as deleted but not acctually deleted (change `status` from 0 to 1)
 func OnFileRemoved(filehash string) bool {
-	return false
+	statement, err := mydb.DBConn().Prepare("update tbl_file set status = '1' where sha1 = ? and status = 0")
+	if err != nil {
+		fmt.Println("Failed to prepare statement, err: " + err.Error())
+		return false
+	}
+	defer statement.Close()
+	marked, err := statement.Exec(filehash)
+	if err != nil {
+		fmt.Println("Failed to update table, err: " + err.Error())
+		return false
+	}
+	rows, err := marked.RowsAffected()
+	if err != nil {
+		return false
+	}
+	fmt.Println("Updated table:", rows)
+	return true
 }
