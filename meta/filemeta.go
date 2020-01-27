@@ -36,6 +36,23 @@ func GetFileMeta(sha1 string) FileMeta {
 	return fileMetas[sha1]
 }
 
+// GetFileMetaDB : get file meta info from DB
+func GetFileMetaDB(sha1 string) (FileMeta, error) {
+	tFile, err := database.GetFileMeta(sha1)
+	if err != nil {
+		return FileMeta{}, err
+	}
+
+	fMeta := FileMeta{
+		FileSha1: tFile.FileHash,
+		FileName: tFile.FileName.String,
+		FileSize: tFile.FileSize.Int64,
+		Location: tFile.FileLocation.String,
+	}
+
+	return fMeta, nil
+}
+
 // GetLastFileMetas : get the last `count` files' meta datas
 func GetLastFileMetas(count int) []FileMeta {
 	count = minInt(count, len(fileMetas))
