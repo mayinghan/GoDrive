@@ -15,28 +15,34 @@ import (
 
 // FileMetaResponse contains the file meta info struct and error messages
 type FileMetaResponse struct {
-	FileMeta  meta.FileMeta `json:"meta"`
-	ErrorCode int64         `json:"code,omitempty"`
-	ErrorMsg  string        `json:"msg,omitempty"`
+	FileMeta   meta.FileMeta `json:"meta,omitempty"`
+	StatusCode int           `json:"code,omitempty"`
+	Msg        string        `json:"msg,omitempty"`
 }
 
 //returnErrorResponse creates a file meta reponse object that contains the error
-func returnErrorResponse(c int64, msg string) (fmr FileMetaResponse) {
+func returnErrorResponse(c int, msg string) (fmr FileMetaResponse) {
 	fmr = FileMetaResponse{
-		FileMeta:  meta.FileMeta{},
-		ErrorCode: c,
-		ErrorMsg:  msg,
+		StatusCode: c,
+		Msg:        msg,
 	}
 	return
 }
 
 //returnJson writes Json message to front-end
-func returnJSON(w http.ResponseWriter, v interface{}) {
+func returnJSON(w http.ResponseWriter, v FileMetaResponse) {
 	js, err := json.Marshal(v)
 	if err != nil {
-		fmt.Printf("Failed to create json file %s\n", err)
-		return
+		e := fmt.Sprintf("Failed to create json object %s\n", err)
+		panic(e)
+		// return
 	}
+	if v.StatusCode != 200 {
+		w.WriteHeader(v.StatusCode)
+	} else {
+		w.WriteHeader(200)
+	}
+
 	w.Header().Set("Content-Type", "application/json")
 	w.Write(js)
 }
@@ -67,7 +73,7 @@ func UploadHandler(w http.ResponseWriter, r *http.Request) {
 
 		fileMeta := meta.FileMeta{
 			FileName: head.Filename,
-			Location: "C://Users/liuwi/Desktop/tmp/" + head.Filename,
+			Location: "/tmp/" + head.Filename,
 			UploadAt: time.Now().Format("2006-01-02 15:04:05"),
 		}
 		newFile, err := os.Create(fileMeta.Location)
@@ -93,21 +99,17 @@ func UploadHandler(w http.ResponseWriter, r *http.Request) {
 		//fmt.Printf("%v\n", fileMeta)
 		// upload meta data to DB
 		_ = meta.UpdateFileMetaDB(fileMeta)
+
 		// io.WriteString(w, "Upload Successfully")
 		// redirect to /success
 		fmr = FileMetaResponse{
-			FileMeta:  fileMeta,
-			ErrorCode: 201,
-			ErrorMsg:  "file successfully uploaded!",
+			FileMeta:   fileMeta,
+			StatusCode: 200,
+			Msg:        "file successfully uploaded!",
 		}
 		returnJSON(w, fmr)
 		// http.Redirect(w, r, "/file/upload/success", http.StatusFound)
 	}
-}
-
-// UploadSuccessHandler will return content when upload successfully and returns a json file
-func UploadSuccessHandler(w http.ResponseWriter, r *http.Request) {
-	io.WriteString(w, "Upload Successfully!")
 }
 
 // GetFileMetaHandler gets the meta data of the given file from request.form
@@ -210,9 +212,9 @@ func FileUpdateHandler(w http.ResponseWriter, r *http.Request) {
 	meta.UpdateFileMeta(currFileMeta)
 
 	fmr := FileMetaResponse{
-		FileMeta:  currFileMeta,
-		ErrorCode: 201,
-		ErrorMsg:  "file successfully updated!",
+		FileMeta:   currFileMeta,
+		StatusCode: 200,
+		Msg:        "file successfully updated!",
 	}
 	returnJSON(w, fmr)
 
