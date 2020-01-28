@@ -93,16 +93,35 @@ func IsFileUploaded(filehash string) (bool, error) {
 	return true, nil
 }
 
-// GetBatchFileMeta : get file metas by batch. param: batch size
-func GetBatchFileMeta(batchSize int) ([]TableFile, error) {
+// GetLastNMetaList : get last n file metas by batch. param: batch size
+func GetLastNMetaList(batchSize int) ([]TableFile, error) {
 	statement, err := mydb.DBConn().Prepare("select sha1, location, name, size from tbl_file where status=1 limit ?")
 	if err != nil {
 		fmt.Println("Failed to prepare statement, err: " + err.Error())
 		return nil, err
 	}
 	defer statement.Close()
-	// todo: query `limit`
-	return nil, nil
+
+	rows, err := statement.Query(batchSize)
+	if err != nil {
+		fmt.Println(err.Error())
+		return nil, err
+	}
+
+	var files []TableFile
+	for rows.Next() {
+		file := TableFile{}
+		err = rows.Scan(&file.FileHash, &file.FileLocation,
+			&file.FileName, &file.FileSize)
+		if err != nil {
+			fmt.Println(err.Error())
+			break
+		}
+		files = append(files, file)
+	}
+
+	fmt.Printf("Get %d files \n", len(files))
+	return files, nil
 }
 
 // OnFileRemoved : Use a delete flag to mark resources as deleted but not acctually deleted (change `status` from 0 to 1)

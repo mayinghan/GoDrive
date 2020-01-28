@@ -65,9 +65,34 @@ func GetLastFileMetas(count int) []FileMeta {
 	return fMetaSlice[0:count]
 }
 
+// GetLastFileMetasDB : get last `limit` files meta from DB
+func GetLastFileMetasDB(limit int) ([]FileMeta, error) {
+	files, err := database.GetLastNMetaList(limit)
+	if err != nil {
+		return make([]FileMeta, 0), err
+	}
+
+	fMetas := make([]FileMeta, len(files))
+	for i := 0; i < len(fMetas); i++ {
+		fMetas[i] = FileMeta{
+			FileSha1: files[i].FileHash,
+			FileName: files[i].FileName.String,
+			FileSize: files[i].FileSize.Int64,
+			Location: files[i].FileLocation.String,
+		}
+	}
+
+	return fMetas, nil
+}
+
 // RemoveMeta : remove the file meta, in the future, need to consider about multithreading security
 func RemoveMeta(fileSha1 string) {
 	delete(fileMetas, fileSha1)
+}
+
+// RemoveMetaDB removes a file meta from the Database
+func RemoveMetaDB(filesha string) bool {
+	return database.OnFileRemoved(filesha)
 }
 
 func minInt(a, b int) int {

@@ -232,7 +232,13 @@ func FileUpdateHandler(w http.ResponseWriter, r *http.Request) {
 func FileDeleteHandler(w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()
 	fileSha1 := r.Form.Get("filehash")
-	fileMeta := meta.GetFileMeta(fileSha1)
+	fileMeta, err := meta.GetFileMetaDB(fileSha1)
+	if err != nil {
+		fmr := returnErrorResponse(500, "failed to delete file from DB")
+		returnJSON(w, fmr)
+		return
+	}
+	// remove the file locally
 	os.Remove(fileMeta.Location)
 	meta.RemoveMeta(fileSha1)
 	w.WriteHeader(http.StatusOK)
