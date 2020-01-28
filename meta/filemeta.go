@@ -1,7 +1,7 @@
 package meta
 
 import (
-	"GoDrive/database"
+	"GoDrive/db"
 	"sort"
 )
 
@@ -28,7 +28,7 @@ func UpdateFileMeta(fm FileMeta) {
 
 // UpdateFileMetaDB : add/modify file meta into DB
 func UpdateFileMetaDB(fm FileMeta) bool {
-	return database.OnFileUploadFinished(fm.FileSha1, fm.FileName, fm.FileSize, fm.Location)
+	return db.OnFileUploadFinished(fm.FileSha1, fm.FileName, fm.FileSize, fm.Location)
 }
 
 // GetFileMeta : get FileMeta struct based on give SHA1 hash code
@@ -38,7 +38,7 @@ func GetFileMeta(sha1 string) FileMeta {
 
 // GetFileMetaDB : get file meta info from DB
 func GetFileMetaDB(sha1 string) (FileMeta, error) {
-	tFile, err := database.GetFileMeta(sha1)
+	tFile, err := db.GetFileMeta(sha1)
 	if err != nil {
 		return FileMeta{}, err
 	}
@@ -67,7 +67,7 @@ func GetLastFileMetas(count int) []FileMeta {
 
 // GetLastFileMetasDB : get last `limit` files meta from DB
 func GetLastFileMetasDB(limit int) ([]FileMeta, error) {
-	files, err := database.GetLastNMetaList(limit)
+	files, err := db.GetLastNMetaList(limit)
 	if err != nil {
 		return make([]FileMeta, 0), err
 	}
@@ -90,9 +90,9 @@ func RemoveMeta(fileSha1 string) {
 	delete(fileMetas, fileSha1)
 }
 
-// RemoveMetaDB removes a file meta from the Database
+// RemoveMetaDB removes a file meta from the db
 func RemoveMetaDB(filesha string) bool {
-	return database.OnFileRemoved(filesha)
+	return db.OnFileRemoved(filesha)
 }
 
 func minInt(a, b int) int {

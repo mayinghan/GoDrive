@@ -1,7 +1,7 @@
-package database
+package db
 
 import (
-	"GoDrive/database/mydb"
+	"GoDrive/db/mydb"
 	"database/sql"
 	"fmt"
 )
@@ -126,7 +126,7 @@ func GetLastNMetaList(batchSize int) ([]TableFile, error) {
 
 // OnFileRemoved : Use a delete flag to mark resources as deleted but not acctually deleted (change `status` from 0 to 1)
 func OnFileRemoved(filehash string) bool {
-	statement, err := mydb.DBConn().Prepare("update tbl_file set status = '1' where sha1 = ? and status = 0")
+	statement, err := mydb.DBConn().Prepare("update tbl_file set status = '1' where sha1 = ? and status = 0 limit 1")
 	if err != nil {
 		fmt.Println("Failed to prepare statement, err: " + err.Error())
 		return false
