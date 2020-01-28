@@ -12,7 +12,7 @@ import (
 func main() {
 	fmt.Printf("The server running on 127.0.0.1:5050\n")
 	router := mux.NewRouter().StrictSlash(true)
-	router.HandleFunc("/api/file/upload", controller.UploadHandler)
+	router.HandleFunc("/api/file/upload", controller.UploadHandler).Methods("POST")
 	router.HandleFunc("/api/file/meta", controller.GetFileMetaHandler)
 	router.HandleFunc("/api/file/query", controller.QueryByBatchHandler)
 	router.HandleFunc("/api/file/download", controller.DownloadHandler)

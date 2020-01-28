@@ -49,67 +49,67 @@ func returnJSON(w http.ResponseWriter, v FileMetaResponse) {
 
 // UploadHandler handles file upload
 func UploadHandler(w http.ResponseWriter, r *http.Request) {
-	if r.Method == "GET" {
-		// return upload file page
-		page, err := ioutil.ReadFile("./static/view/upload.html")
-		if err != nil {
-			io.WriteString(w, "internal server error")
-			return
-		}
-		io.WriteString(w, string(page))
-	} else if r.Method == "POST" {
-		var fmr FileMetaResponse
-		// get a file stream and save into local fs
-		// fmt.Printf("%v\n", r)
-		file, head, err := r.FormFile("file")
-		if err != nil {
-			fmr = returnErrorResponse(406, "could not receive file")
-			returnJSON(w, fmr)
-			return
-			//fmt.Printf("Failed to get file %s\n", err.Error())
-		}
-		// make sure the file handler is closed
-		defer file.Close()
-
-		fileMeta := meta.FileMeta{
-			FileName: head.Filename,
-			Location: "/tmp/" + head.Filename,
-			UploadAt: time.Now().Format("2006-01-02 15:04:05"),
-		}
-		newFile, err := os.Create(fileMeta.Location)
-		if err != nil {
-			fmr = returnErrorResponse(500, "failed to create tmp file for io")
-			returnJSON(w, fmr)
-			return
-		}
-		defer newFile.Close()
-
-		fileMeta.FileSize, err = io.Copy(newFile, file)
-		if err != nil {
-			fmr = returnErrorResponse(500, "failed to copy content to tmp file")
-			returnJSON(w, fmr)
-			//fmt.Printf("Failed to copy content to temp file %s\n", err)
-			return
-		}
-		// move the seek of new file to the start point
-		newFile.Seek(0, 0)
-		// update file meta hashmap
-		fileMeta.FileSha1 = utils.FileSHA1(newFile)
-		//debug
-		//fmt.Printf("%v\n", fileMeta)
-		// upload meta data to DB
-		_ = meta.UpdateFileMetaDB(fileMeta)
-
-		// io.WriteString(w, "Upload Successfully")
-		// redirect to /success
-		fmr = FileMetaResponse{
-			FileMeta:   fileMeta,
-			StatusCode: 200,
-			Msg:        "file successfully uploaded!",
-		}
+	// if r.Method == "GET" {
+	// 	// return upload file page
+	// 	page, err := ioutil.ReadFile("./static/view/upload.html")
+	// 	if err != nil {
+	// 		io.WriteString(w, "internal server error")
+	// 		return
+	// 	}
+	// 	io.WriteString(w, string(page))
+	// } else if r.Method == "POST" {
+	var fmr FileMetaResponse
+	// get a file stream and save into local fs
+	// fmt.Printf("%v\n", r)
+	file, head, err := r.FormFile("file")
+	if err != nil {
+		fmr = returnErrorResponse(406, "could not receive file")
 		returnJSON(w, fmr)
-		// http.Redirect(w, r, "/file/upload/success", http.StatusFound)
+		return
+		//fmt.Printf("Failed to get file %s\n", err.Error())
 	}
+	// make sure the file handler is closed
+	defer file.Close()
+
+	fileMeta := meta.FileMeta{
+		FileName: head.Filename,
+		Location: "/tmp/" + head.Filename,
+		UploadAt: time.Now().Format("2006-01-02 15:04:05"),
+	}
+	newFile, err := os.Create(fileMeta.Location)
+	if err != nil {
+		fmr = returnErrorResponse(500, "failed to create tmp file for io")
+		returnJSON(w, fmr)
+		return
+	}
+	defer newFile.Close()
+
+	fileMeta.FileSize, err = io.Copy(newFile, file)
+	if err != nil {
+		fmr = returnErrorResponse(500, "failed to copy content to tmp file")
+		returnJSON(w, fmr)
+		//fmt.Printf("Failed to copy content to temp file %s\n", err)
+		return
+	}
+	// move the seek of new file to the start point
+	newFile.Seek(0, 0)
+	// update file meta hashmap
+	fileMeta.FileSha1 = utils.FileSHA1(newFile)
+	//debug
+	//fmt.Printf("%v\n", fileMeta)
+	// upload meta data to DB
+	_ = meta.UpdateFileMetaDB(fileMeta)
+
+	// io.WriteString(w, "Upload Successfully")
+	// redirect to /success
+	fmr = FileMetaResponse{
+		FileMeta:   fileMeta,
+		StatusCode: 200,
+		Msg:        "file successfully uploaded!",
+	}
+	returnJSON(w, fmr)
+	// http.Redirect(w, r, "/file/upload/success", http.StatusFound)
+	// }
 }
 
 // GetFileMetaHandler gets the meta data of the given file from request.form
