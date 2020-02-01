@@ -22,12 +22,10 @@ func returnUserRespJSON(w http.ResponseWriter, v userResponse) {
 		e := fmt.Sprintf("Failed to create json obj %s\n", err.Error())
 		panic(e)
 	}
-
+	w.Header().Set("Content-Type", "application/json")
 	if v.StatusCode != 200 {
 		w.WriteHeader(v.StatusCode)
 	}
-
-	w.Header().Set("Content-Type", "application/json")
 	w.Write(js)
 }
 
@@ -40,7 +38,25 @@ func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 			returnUserRespJSON(w, resp)
 			return
 		}
-		_ = json.NewDecoder(r.Body).Decode(&regInfo)
 
+		// request body is a json object
+		err := json.NewDecoder(r.Body).Decode(&regInfo)
+		if err != nil {
+			returnUserRespJSON(w, userErrorResp(http.StatusInternalServerError, "Failed to parse json body object"))
+			return
+		}
+
+		status, msg, err := db.UserRegister(&regInfo)
+		if err != nil {
+			returnUserRespJSON(w, userErrorResp(500, msg))
+			return
+		}
+
+		if status {
+			returnUserRespJSON(w, userResponse{200, msg})
+		} else {
+			returnUserRespJSON(w, userResponse{http.StatusBadRequest, msg})
+		}
+		return
 	}
 }

@@ -37,13 +37,13 @@ func returnFileRespJSON(w http.ResponseWriter, v fileMetaResponse) {
 		panic(e)
 		// return
 	}
+
+	w.Header().Set("Content-Type", "application/json")
 	if v.StatusCode != 200 {
 		w.WriteHeader(v.StatusCode)
 	} else {
 		w.WriteHeader(200)
 	}
-
-	w.Header().Set("Content-Type", "application/json")
 	w.Write(js)
 }
 
