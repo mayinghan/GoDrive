@@ -18,6 +18,8 @@ func UserRegister(regInfo *RegInfo) (bool, string, error) {
 	password := regInfo.Password
 	email := regInfo.Email
 
+	// fmt.Printf("%v\n", regInfo)
+
 	stmt, err := mydb.DBConn().Prepare(
 		"insert ignore into tbl_user (`username`, `password`, `email`) values(?, ?, ?)")
 

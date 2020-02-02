@@ -2,6 +2,7 @@ package controller
 
 import (
 	"GoDrive/db"
+	"GoDrive/utils"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -11,6 +12,8 @@ type userResponse struct {
 	StatusCode int    `json:"code"`
 	Msg        string `json:"msg"`
 }
+
+const salt = "&6ty"
 
 func userErrorResp(s int, msg string) userResponse {
 	return userResponse{StatusCode: s, Msg: msg}
@@ -41,6 +44,10 @@ func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 
 		// request body is a json object
 		err := json.NewDecoder(r.Body).Decode(&regInfo)
+		// using MD5 and the salt to hash the password
+		hashedPassword := utils.MD5([]byte(regInfo.Password + salt))
+		regInfo.Password = hashedPassword
+
 		if err != nil {
 			returnUserRespJSON(w, userErrorResp(http.StatusInternalServerError, "Failed to parse json body object"))
 			return
