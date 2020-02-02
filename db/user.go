@@ -12,6 +12,12 @@ type RegInfo struct {
 	Email    string `json:"email"`
 }
 
+// LoginInfo is the login input : username and password
+type LoginInfo struct {
+	Username string `json:"username"`
+	Password string `json:"password"`
+}
+
 // UserRegister handles user registration. Return a bool and a server message
 func UserRegister(regInfo *RegInfo) (bool, string, error) {
 	username := regInfo.Username

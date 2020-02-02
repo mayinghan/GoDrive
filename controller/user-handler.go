@@ -8,12 +8,12 @@ import (
 	"net/http"
 )
 
+const salt = "&6ty"
+
 type userResponse struct {
 	StatusCode int    `json:"code"`
 	Msg        string `json:"msg"`
 }
-
-const salt = "&6ty"
 
 func userErrorResp(s int, msg string) userResponse {
 	return userResponse{StatusCode: s, Msg: msg}
