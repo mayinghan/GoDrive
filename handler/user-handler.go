@@ -31,6 +31,7 @@ func RegisterHandler(c *gin.Context) {
 	suc, msg, err := db.UserRegister(&regInput)
 
 	if suc {
+		utils.SendMail(regInput.Email)
 		c.JSON(http.StatusOK, gin.H{
 			"code": 0,
 			"msg":  msg,
