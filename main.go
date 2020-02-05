@@ -1,26 +1,17 @@
 package main
 
 import (
-	"GoDrive/controller"
+	"GoDrive/router"
 	"fmt"
-	"log"
-	"net/http"
-
-	"github.com/gorilla/mux"
 )
 
 func main() {
 	fmt.Printf("The server running on 127.0.0.1:5050\n")
-	router := mux.NewRouter().StrictSlash(true)
-	router.HandleFunc("/api/file/upload", controller.UploadHandler).Methods("POST")
-	router.HandleFunc("/api/file/meta", controller.GetFileMetaHandler).Methods("POST")
-	router.HandleFunc("/api/file/query", controller.QueryByBatchHandler)
-	router.HandleFunc("/api/file/download", controller.DownloadHandler)
-	router.HandleFunc("/api/file/update", controller.FileUpdateHandler)
-	router.HandleFunc("/api/file/delete", controller.FileDeleteHandler)
+	router := router.Router()
 
-	router.HandleFunc("/api/user/login", controller.RegisterHandler).Methods("POST")
-	log.Fatal(http.ListenAndServe(":5050", router))
+	err := router.Run(":5050")
+	if err != nil {
+		fmt.Printf("Failed to start server, err:%s\n", err.Error())
+	}
 
-	http.Get("127.0.0.1:5100")
 }
