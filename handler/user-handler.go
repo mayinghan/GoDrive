@@ -31,7 +31,6 @@ func RegisterHandler(c *gin.Context) {
 	suc, msg, err := db.UserRegister(&regInput)
 
 	if suc {
-		utils.SendMail(regInput.Email)
 		c.JSON(http.StatusOK, gin.H{
 			"code": 0,
 			"msg":  msg,
@@ -56,4 +55,22 @@ func RegisterHandler(c *gin.Context) {
 		})
 	}
 	return
+}
+
+// RegisVerifyEmailHandler : send verify code to user email to finish registration
+func RegisVerifyEmailHandler(c *gin.Context) {
+	type verifyEmail struct {
+		Email string `json:"email" binding:"required"`
+	}
+
+	var vrfEmail verifyEmail
+	if err := c.ShouldBindJSON(&vrfEmail); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"msg":   "Internal error happened",
+			"code":  1,
+			"error": err.Error(),
+		})
+		return
+	}
+
 }
