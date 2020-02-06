@@ -62,8 +62,8 @@ func RegisterHandler(c *gin.Context) {
 	return
 }
 
-// RegisVerifyEmailHandler : send verify code to user email to finish registration
-func RegisVerifyEmailHandler(c *gin.Context) {
+// SendVerifyEmailHandler : send verify code to user email to finish registration
+func SendVerifyEmailHandler(c *gin.Context) {
 	type verifyEmail struct {
 		Email string `json:"email" binding:"required"`
 	}
