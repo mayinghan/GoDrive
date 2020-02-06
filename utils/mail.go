@@ -100,7 +100,7 @@ func init() {
 }
 
 // SendMail : send email to user
-func SendMail(userEmail string) {
+func SendMail(userEmail string) error {
 	user := "me"
 	title := "[GoDrive]Verify your E-Mail!"
 	body := "asd"
@@ -111,5 +111,7 @@ func SendMail(userEmail string) {
 
 	if err != nil {
 		log.Fatalf("Unable to send. Error: %s", err.Error())
+		return err
 	}
+	return nil
 }

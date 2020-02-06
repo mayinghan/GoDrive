@@ -37,12 +37,12 @@ func createEmailVerifPool() *redis.Pool {
 				c.Close()
 				fmt.Println("Select redis db for emailveri failed")
 				panic(err)
-				return nil, err
 			}
 			return c, nil
 		},
 		TestOnBorrow: func(conn redis.Conn, t time.Time) error {
-			if time.Since(t) < time.Minute {
+			// if the time cost since connection is less than 5 minutes
+			if time.Since(t) < 5*time.Minute {
 				return nil
 			}
 			_, err := conn.Do("PING")

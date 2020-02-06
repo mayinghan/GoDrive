@@ -1,11 +1,16 @@
 package handler
 
 import (
+	"GoDrive/cache"
 	"GoDrive/db"
 	"GoDrive/utils"
 	"fmt"
+	"math/rand"
 	"net/http"
+	"strconv"
+	"time"
 
+	"github.com/garyburd/redigo/redis"
 	"github.com/gin-gonic/gin"
 )
 
@@ -73,4 +78,29 @@ func RegisVerifyEmailHandler(c *gin.Context) {
 		return
 	}
 
+	// get redis pool connection
+	redisConn := cache.EmailVeriPool().Get()
+	defer redisConn.Close()
+
+	// check current user email
+	currTimestamp := time.Now().UTC().Unix()
+	storedTime, err := redis.Uint64(redisConn.Do("HGET", vrfEmail.Email, "create_at"))
+	if err != nil {
+		fmt.Printf("redis get previous created time failed %v\n", err)
+		storedTime = 0
+	}
+
+	if storedTime != 0 && currTimestamp-int64(storedTime) < 180 {
+		fmt.Println("dont send email again")
+	}
+
+	redisConn.Do("HSET", vrfEmail.Email, "create_at", currTimestamp)
+
+	code := rand.Intn(899999) + 100000
+	s := strconv.Itoa(code)
+	fmt.Println(s)
+	err = utils.SendMail(vrfEmail.Email)
+	if err != nil {
+		panic(err)
+	}
 }
