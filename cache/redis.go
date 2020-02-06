@@ -14,7 +14,7 @@ var (
 	emailVeriDB   = 0
 )
 
-func createEmailVerifPool() *redis.Pool {
+func createPool(dbtype int) *redis.Pool {
 	return &redis.Pool{
 		MaxIdle:     50,
 		MaxActive:   30,
@@ -33,7 +33,7 @@ func createEmailVerifPool() *redis.Pool {
 				return nil, err
 			}
 			// 3. select db 0
-			if _, err = c.Do("SELECT", emailVeriDB); err != nil {
+			if _, err = c.Do("SELECT", dbtype); err != nil {
 				c.Close()
 				fmt.Println("Select redis db for emailveri failed")
 				panic(err)
@@ -52,7 +52,7 @@ func createEmailVerifPool() *redis.Pool {
 }
 
 func init() {
-	emailVeriPool = createEmailVerifPool()
+	emailVeriPool = createPool(emailVeriDB)
 }
 
 // EmailVeriPool returns the redis pool for email verification
