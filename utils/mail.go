@@ -100,10 +100,10 @@ func init() {
 }
 
 // SendMail : send email to user
-func SendMail(userEmail string) error {
+func SendMail(userEmail string, code string) error {
 	user := "me"
 	title := "[GoDrive]Verify your E-Mail!"
-	body := "asd"
+	body := "Your verification code is " + code + "."
 	msg := fmt.Sprintf("From: %s\r\nTo: %s\r\nSubject: %s\r\n\r\n%s", user, userEmail, title, body)
 	var message gmail.Message
 	message.Raw = base64.StdEncoding.EncodeToString([]byte(msg))

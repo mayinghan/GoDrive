@@ -125,7 +125,7 @@ func SendVerifyEmailHandler(c *gin.Context) {
 	// code expires after 10 min
 	redisConn.Do("EXPIRE", vrfEmail.Email, 600)
 	fmt.Println(s)
-	err = utils.SendMail(vrfEmail.Email)
+	err = utils.SendMail(vrfEmail.Email, s)
 	if err != nil {
 		panic(err)
 	}
