@@ -30,6 +30,25 @@ func RegisterHandler(c *gin.Context) {
 
 	fmt.Printf("%v\n", regInput)
 
+	veriCode := regInput.Code
+	rc := cache.EmailVeriPool().Get()
+	code, err := redis.Uint64(rc.Do("HGET", regInput.Email, "code"))
+	if err != nil {
+		fmt.Println(err.Error())
+		c.JSON(500, gin.H{
+			"code": 1,
+			"msg":  err.Error(),
+		})
+		return
+	}
+	fmt.Println(veriCode)
+	if int64(code)-veriCode != 0 {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"code": 1,
+			"msg":  "Invalid verification code!",
+		})
+		return
+	}
 	// encrypt the password
 	encryptedPwd := utils.MD5([]byte(regInput.Password + salt))
 	regInput.Password = encryptedPwd

@@ -10,6 +10,7 @@ type RegInfo struct {
 	Username string `json:"username" binding:"required"`
 	Password string `json:"password" binding:"required"`
 	Email    string `json:"email" binding:"required"`
+	Code     int64  `json:"code" binding:"required"`
 }
 
 // LoginInfo is the login input : username and password
@@ -27,7 +28,7 @@ func UserRegister(regInfo *RegInfo) (bool, string, error) {
 	// fmt.Printf("%v\n", regInfo)
 
 	stmt, err := mydb.DBConn().Prepare(
-		"insert ignore into tbl_user (`username`, `password`, `email`) values(?, ?, ?)")
+		"insert ignore into tbl_user (`username`, `password`, `email`, `email_validated`) values(?, ?, ?, 1)")
 
 	if err != nil {
 		e := fmt.Sprint("Internal server error: Failed to insert to DB.")
