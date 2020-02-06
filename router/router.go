@@ -11,6 +11,6 @@ func Router() *gin.Engine {
 	router := gin.Default()
 	// APIs that don't need auth
 	router.POST("/api/user/signup", handler.RegisterHandler)
-	router.POST("/api/user/verify", handler.SendVerifyEmailHandler)
+	router.GET("/api/user/verify", handler.SendVerifyEmailHandler)
 	return router
 }

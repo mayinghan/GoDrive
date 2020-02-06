@@ -65,11 +65,11 @@ func RegisterHandler(c *gin.Context) {
 // SendVerifyEmailHandler : send verify code to user email to finish registration
 func SendVerifyEmailHandler(c *gin.Context) {
 	type verifyEmail struct {
-		Email string `json:"email" binding:"required"`
+		Email string `json:"email" form:"email" binding:"required"`
 	}
 
 	var vrfEmail verifyEmail
-	if err := c.ShouldBindJSON(&vrfEmail); err != nil {
+	if err := c.ShouldBind(&vrfEmail); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"msg":   "Internal error happened",
 			"code":  1,
@@ -90,14 +90,21 @@ func SendVerifyEmailHandler(c *gin.Context) {
 		storedTime = 0
 	}
 
-	if storedTime != 0 && currTimestamp-int64(storedTime) < 180 {
+	if storedTime != 0 && currTimestamp-int64(storedTime) < 20 {
 		fmt.Println("dont send email again")
+		c.JSON(http.StatusBadRequest, gin.H{
+			"code": 1,
+			"msg":  "Send request too fast! Please wait 90s to resend the code",
+		})
+		return
 	}
 
-	redisConn.Do("HSET", vrfEmail.Email, "create_at", currTimestamp)
-
+	rand.Seed(currTimestamp)
 	code := rand.Intn(899999) + 100000
 	s := strconv.Itoa(code)
+	redisConn.Do("HMSET", vrfEmail.Email, "create_at", currTimestamp, "code", code)
+	// code expires after 10 min
+	redisConn.Do("EXPIRE", vrfEmail.Email, 600)
 	fmt.Println(s)
 	err = utils.SendMail(vrfEmail.Email)
 	if err != nil {
