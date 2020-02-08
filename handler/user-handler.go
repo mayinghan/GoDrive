@@ -100,12 +100,12 @@ func LoginHandler(c *gin.Context) {
 func RegisterHandler(c *gin.Context) {
 	var regInput db.RegInfo
 	if err := c.ShouldBindJSON(&regInput); err != nil {
+		fmt.Printf("%v\n", err)
 		c.JSON(http.StatusBadRequest, gin.H{
 			"msg":  err.Error(),
 			"code": 1,
 		})
-
-		return
+		panic(err)
 	}
 
 	fmt.Printf("%v\n", regInput)
@@ -174,7 +174,7 @@ func SendVerifyEmailHandler(c *gin.Context) {
 			"code":  1,
 			"error": err.Error(),
 		})
-		return
+		panic(err)
 	}
 
 	// get redis pool connection
