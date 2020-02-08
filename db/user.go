@@ -2,8 +2,12 @@ package db
 
 import (
 	"GoDrive/db/mydb"
+	"GoDrive/utils"
+	"database/sql"
 	"fmt"
 )
+
+const salt = "&6ty"
 
 // RegInfo is the registration input: username password and email
 type RegInfo struct {
@@ -17,6 +21,40 @@ type RegInfo struct {
 type LoginInfo struct {
 	Username string `json:"username"`
 	Password string `json:"password"`
+}
+
+//UserLogin checks against the database for an existing user. Returns a bool and server message
+func UserLogin(loginInfo *LoginInfo) (bool, string, error) {
+
+	var comparePwd string
+	username := loginInfo.Username
+	password := utils.MD5([]byte(loginInfo.Password + salt))
+
+	stmt, err := mydb.DBConn().Prepare(
+		"select username from tbl_user where (username = ? or email = ?) and password = ?")
+
+	if err != nil {
+		e := fmt.Sprint("Internal server error: Failed to retrieve user from DB1")
+		fmt.Println(e + err.Error())
+		return false, e, err
+	}
+	defer stmt.Close()
+
+	err = stmt.QueryRow(username, username, password).Scan(&comparePwd)
+
+	if err != nil {
+		var e string
+		if err == sql.ErrNoRows {
+			e = fmt.Sprint("Unauthorized error: Failed to find user with that username/password.")
+		} else {
+			e = fmt.Sprint("Internal server error: Failed to retrieve user from DB3.")
+		}
+		fmt.Println(e + err.Error())
+		return false, e, err
+	}
+
+	return true, "Successfully logged in!", nil
+
 }
 
 // UserRegister handles user registration. Return a bool and a server message
