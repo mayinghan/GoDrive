@@ -10,11 +10,91 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/dgrijalva/jwt-go"
 	"github.com/garyburd/redigo/redis"
 	"github.com/gin-gonic/gin"
 )
 
 const salt = "&6ty"
+
+// jwtKey is the key used to create the signature
+var jwtKey = []byte("myhisaqt")
+
+// Claims is a struct that is encoded to a jwt
+type Claims struct {
+	Username string `json:"username"`
+	jwt.StandardClaims
+}
+
+// LoginHandler handles user login.
+func LoginHandler(c *gin.Context) {
+
+	var userInput db.LoginInfo
+	if err := c.ShouldBindJSON(&userInput); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"code": 1,
+			"msg":  err.Error(),
+		})
+		panic(err)
+	}
+
+	fmt.Printf("%v\n", userInput)
+
+	suc, msg, err := db.UserLogin(&userInput)
+
+	if suc {
+		//Create the expiration time (10 minutes) and the JWT claim
+		expTime := time.Now().Add(10 * time.Minute)
+		claims := &Claims{
+			Username: userInput.Username,
+			StandardClaims: jwt.StandardClaims{
+				ExpiresAt: expTime.Unix(),
+			},
+		}
+
+		token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+		tokenStr, err := token.SignedString(jwtKey)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"code":  1,
+				"msg":   "Internal server error: Failed to create JWT token.",
+				"error": err.Error(),
+			})
+		} else {
+			c.JSON(http.StatusOK, gin.H{
+				"code": 0,
+				"msg":  msg,
+				"data": struct {
+					Username string `json:"username"`
+				}{
+					Username: userInput.Username,
+				},
+			})
+			c.SetCookie(
+				"cookie",    //name
+				tokenStr,    //value
+				3600,        //max age
+				"/",         //path
+				"localhost", //domain
+				true,        //secure
+				true,        //httponly
+			)
+		}
+	} else if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"code":  1,
+			"msg":   msg,
+			"error": err.Error(),
+		})
+	} else {
+		c.JSON(http.StatusUnprocessableEntity, gin.H{
+			"code": 1,
+			"msg":  msg,
+		})
+	}
+
+	return
+}
 
 // RegisterHandler handles user registration. Method: POST
 func RegisterHandler(c *gin.Context) {
