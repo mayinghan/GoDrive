@@ -10,21 +10,11 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/dgrijalva/jwt-go"
 	"github.com/garyburd/redigo/redis"
 	"github.com/gin-gonic/gin"
 )
 
 const salt = "&6ty"
-
-// jwtKey is the key used to create the signature
-var jwtKey = []byte("myhisaqt")
-
-// Claims is a struct that is encoded to a jwt
-type Claims struct {
-	Username string `json:"username"`
-	jwt.StandardClaims
-}
 
 // LoginHandler handles user login.
 func LoginHandler(c *gin.Context) {
@@ -43,17 +33,8 @@ func LoginHandler(c *gin.Context) {
 	suc, msg, err := db.UserLogin(&userInput)
 
 	if suc {
-		//Create the expiration time (10 minutes) and the JWT claim
-		expTime := time.Now().Add(10 * time.Minute)
-		claims := &Claims{
-			Username: userInput.Username,
-			StandardClaims: jwt.StandardClaims{
-				ExpiresAt: expTime.Unix(),
-			},
-		}
-
-		token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-		tokenStr, err := token.SignedString(jwtKey)
+		//Create the expiration time (1 hour) and the JWT claim
+		tokenStr, err := utils.Gentoken(userInput.Username)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{
 				"code":  1,
@@ -61,6 +42,15 @@ func LoginHandler(c *gin.Context) {
 				"error": err.Error(),
 			})
 		} else {
+			c.SetCookie(
+				"token",     //name
+				tokenStr,    //value
+				3600,        //max age
+				"/",         //path
+				"localhost", //domain
+				false,       //secure
+				false,       //httponly
+			)
 			c.JSON(http.StatusOK, gin.H{
 				"code": 0,
 				"msg":  msg,
@@ -70,15 +60,7 @@ func LoginHandler(c *gin.Context) {
 					Username: userInput.Username,
 				},
 			})
-			c.SetCookie(
-				"cookie",    //name
-				tokenStr,    //value
-				3600,        //max age
-				"/",         //path
-				"localhost", //domain
-				true,        //secure
-				true,        //httponly
-			)
+
 		}
 	} else if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -209,4 +191,14 @@ func SendVerifyEmailHandler(c *gin.Context) {
 	if err != nil {
 		panic(err)
 	}
+}
+
+// UserInfo : Query user info
+func UserInfo(c *gin.Context) {
+	token, _ := c.Cookie("token")
+	fmt.Printf("Got user token: %s\n", token)
+	c.JSON(http.StatusOK, gin.H{
+		"code": 0,
+		"msg":  "",
+	})
 }

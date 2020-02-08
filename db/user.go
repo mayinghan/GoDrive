@@ -19,8 +19,8 @@ type RegInfo struct {
 
 // LoginInfo is the login input : username and password
 type LoginInfo struct {
-	Username string `json:"username"`
-	Password string `json:"password"`
+	Username string `json:"input" binding:"required"`
+	Password string `json:"password" binding:"required"`
 }
 
 //UserLogin checks against the database for an existing user. Returns a bool and server message
@@ -29,6 +29,8 @@ func UserLogin(loginInfo *LoginInfo) (bool, string, error) {
 	var comparePwd string
 	username := loginInfo.Username
 	password := utils.MD5([]byte(loginInfo.Password + salt))
+
+	fmt.Printf("login input, %s\n", username)
 
 	stmt, err := mydb.DBConn().Prepare(
 		"select username from tbl_user where (username = ? or email = ?) and password = ?")
