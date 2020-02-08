@@ -10,7 +10,7 @@ type RegInfo struct {
 	Username string `json:"username" binding:"required"`
 	Password string `json:"password" binding:"required"`
 	Email    string `json:"email" binding:"required"`
-	Code     int64  `json:"code" binding:"required"`
+	Code     int64  `json:"code,string" binding:"required"`
 }
 
 // LoginInfo is the login input : username and password

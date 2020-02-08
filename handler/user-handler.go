@@ -37,7 +37,7 @@ func RegisterHandler(c *gin.Context) {
 		fmt.Println(err.Error())
 		c.JSON(500, gin.H{
 			"code": 1,
-			"msg":  err.Error(),
+			"msg":  "The code is expired!",
 		})
 		return
 	}
