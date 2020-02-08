@@ -117,17 +117,36 @@ func RegisterHandler(c *gin.Context) {
 	suc, msg, err := db.UserRegister(&regInput)
 
 	if suc {
-		c.JSON(http.StatusOK, gin.H{
-			"code": 0,
-			"msg":  msg,
-			"data": struct {
-				Username string `json:"username"`
-				Email    string `json:"email"`
-			}{
-				Username: regInput.Username,
-				Email:    regInput.Email,
-			},
-		})
+		//Create the expiration time (1 hour) and the JWT claim
+		tokenStr, err := utils.Gentoken(regInput.Username)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"code":  1,
+				"msg":   "Internal server error: Failed to create JWT token.",
+				"error": err.Error(),
+			})
+		} else {
+			c.SetCookie(
+				"token",     //name
+				tokenStr,    //value
+				3600,        //max age
+				"/",         //path
+				"localhost", //domain
+				false,       //secure
+				false,       //httponly
+			)
+			c.JSON(http.StatusOK, gin.H{
+				"code": 0,
+				"msg":  msg,
+				"data": struct {
+					Username string `json:"username"`
+					Email    string `json:"email"`
+				}{
+					Username: regInput.Username,
+					Email:    regInput.Email,
+				},
+			})
+		}
 	} else if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"code":  1,
