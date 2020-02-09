@@ -2,6 +2,7 @@ package handler
 
 import (
 	"GoDrive/cache"
+	"GoDrive/config"
 	"GoDrive/db"
 	"GoDrive/utils"
 	"fmt"
@@ -43,13 +44,13 @@ func LoginHandler(c *gin.Context) {
 			})
 		} else {
 			c.SetCookie(
-				"token",     //name
-				tokenStr,    //value
-				3600,        //max age
-				"/",         //path
-				"localhost", //domain
-				false,       //secure
-				false,       //httponly
+				"token",           //name
+				tokenStr,          //value
+				config.CookieLife, //max age
+				"/",               //path
+				"localhost",       //domain
+				false,             //secure
+				false,             //httponly
 			)
 			c.JSON(http.StatusOK, gin.H{
 				"code": 0,
@@ -127,13 +128,13 @@ func RegisterHandler(c *gin.Context) {
 			})
 		} else {
 			c.SetCookie(
-				"token",     //name
-				tokenStr,    //value
-				3600,        //max age
-				"/",         //path
-				"localhost", //domain
-				false,       //secure
-				false,       //httponly
+				"token",           //name
+				tokenStr,          //value
+				config.CookieLife, //max age
+				"/",               //path
+				"localhost",       //domain
+				false,             //secure
+				false,             //httponly
 			)
 			c.JSON(http.StatusOK, gin.H{
 				"code": 0,

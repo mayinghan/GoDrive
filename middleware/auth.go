@@ -2,6 +2,7 @@
 package middleware
 
 import (
+	"GoDrive/config"
 	"GoDrive/utils"
 	"fmt"
 	"log"
@@ -57,7 +58,7 @@ func JWT() gin.HandlerFunc {
 
 		// auth suc, refresh token
 		cookie, _ := c.Request.Cookie("token")
-		c.SetCookie(cookie.Name, cookie.Value, 3600, cookie.Path, cookie.Domain, false, false)
+		c.SetCookie(cookie.Name, cookie.Value, config.CookieLife, cookie.Path, cookie.Domain, false, false)
 		c.Next()
 	}
 }

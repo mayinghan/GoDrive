@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"GoDrive/config"
 	"time"
 
 	jwt "github.com/dgrijalva/jwt-go"
@@ -17,7 +18,7 @@ type Claims struct {
 
 // Gentoken generate a jwt token by using the user's username
 func Gentoken(username string) (string, error) {
-	expTime := time.Now().Add(10 * time.Minute)
+	expTime := time.Now().Add(config.JWTLife)
 	claims := &Claims{
 		username,
 		jwt.StandardClaims{
