@@ -191,11 +191,11 @@ func SendVerifyEmailHandler(c *gin.Context) {
 		storedTime = 0
 	}
 
-	if storedTime != 0 && currTimestamp-int64(storedTime) < 20 {
+	if storedTime != 0 && currTimestamp-int64(storedTime) < config.SendCodeCoolDown {
 		fmt.Println("dont send email again")
 		c.JSON(http.StatusBadRequest, gin.H{
 			"code": 1,
-			"msg":  "Send request too fast! Please wait 90s to resend the code",
+			"msg":  "Send request too fast! Please wait " + strconv.FormatInt(config.SendCodeCoolDown+10, 10) + "s to resend the code",
 		})
 		return
 	}
