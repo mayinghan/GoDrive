@@ -215,6 +215,11 @@ func SendVerifyEmailHandler(c *gin.Context) {
 
 // UserInfo : Query user info
 func UserInfo(c *gin.Context) {
+	// gettting username
+	username, exist := c.Get("username")
+	if exist {
+		fmt.Printf("username: %s\n", username)
+	}
 	token, _ := c.Cookie("token")
 	fmt.Printf("Got user token: %s\n", token)
 	c.JSON(http.StatusOK, gin.H{

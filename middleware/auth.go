@@ -30,7 +30,7 @@ func JWT() gin.HandlerFunc {
 
 		log.Println("get token: ", token)
 
-		_, err = utils.ParseToken(token)
+		clm, err := utils.ParseToken(token)
 		var msg string
 		if err != nil {
 			suc = false
@@ -57,6 +57,8 @@ func JWT() gin.HandlerFunc {
 		}
 
 		// auth suc, refresh token
+		username := clm.Username
+		c.Set("username", username)
 		cookie, _ := c.Request.Cookie("token")
 		c.SetCookie(cookie.Name, cookie.Value, config.CookieLife, cookie.Path, cookie.Domain, false, false)
 		c.Next()
