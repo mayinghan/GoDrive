@@ -29,13 +29,13 @@ func LoginHandler(c *gin.Context) {
 		panic(err)
 	}
 
-	fmt.Printf("%v\n", userInput)
+	fmt.Printf("userinput: %v\n", userInput)
 
-	suc, msg, err := db.UserLogin(&userInput)
+	suc, username, msg, err := db.UserLogin(&userInput)
 
 	if suc {
 		//Create the expiration time (1 hour) and the JWT claim
-		tokenStr, err := utils.Gentoken(userInput.Username)
+		tokenStr, err := utils.Gentoken(username)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{
 				"code":  1,
@@ -58,7 +58,7 @@ func LoginHandler(c *gin.Context) {
 				"data": struct {
 					Username string `json:"username"`
 				}{
-					Username: userInput.Username,
+					Username: username,
 				},
 			})
 
@@ -225,5 +225,8 @@ func UserInfo(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"code": 0,
 		"msg":  "",
+		"data": gin.H{
+			"username": username,
+		},
 	})
 }

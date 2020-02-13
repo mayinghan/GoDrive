@@ -24,6 +24,7 @@ func JWT() gin.HandlerFunc {
 				"code": 1,
 				"msg":  "No token in the cookie, auth denied",
 			})
+			log.Println("No token in the cookie, auth denied")
 			c.Abort()
 			return
 		}
@@ -31,6 +32,7 @@ func JWT() gin.HandlerFunc {
 		log.Println("get token: ", token)
 
 		clm, err := utils.ParseToken(token)
+
 		var msg string
 		if err != nil {
 			suc = false
@@ -38,29 +40,35 @@ func JWT() gin.HandlerFunc {
 			case jwt.ValidationErrorExpired:
 				{
 					fmt.Println("token expired")
-					msg = "token expired"
+					msg = "token expired, please login again"
 				}
 			default:
 				msg = "token auth check failed"
 			}
 		}
-
 		// if auth failed
 		if !suc {
-			c.JSON(http.StatusUnauthorized, gin.H{
-				"code": 1,
+			c.JSON(http.StatusOK, gin.H{
+				"code": 2,
 				"msg":  msg,
 			})
-			fmt.Println("auth failed")
+			log.Println("auth failed due to ", msg)
 			c.Abort()
 			return
 		}
 
-		// auth suc, refresh token
+		log.Printf("old token expires at %d\n", clm.ExpiresAt)
+		// auth suc
 		username := clm.Username
 		c.Set("username", username)
+		// refresh cookie
 		cookie, _ := c.Request.Cookie("token")
-		c.SetCookie(cookie.Name, cookie.Value, config.CookieLife, cookie.Path, cookie.Domain, false, false)
+		// refresh jwt token
+		tokenStr, err := utils.Gentoken(username)
+		newClm, _ := utils.ParseToken(tokenStr)
+		log.Printf("new token expires at %d\n", newClm.ExpiresAt)
+		c.SetCookie(cookie.Name, tokenStr, config.CookieLife, cookie.Path, cookie.Domain, false, false)
+
 		c.Next()
 	}
 }

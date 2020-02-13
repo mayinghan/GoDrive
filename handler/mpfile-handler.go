@@ -38,6 +38,7 @@ func GetFileChunk(c *gin.Context) {
 
 	fileuser := strings.Split(uploadID, "-")[0]
 	fmt.Println(fileuser)
+
 	// if username != fileuser {
 	// 	fmt.Println("Authentication error, uploadId belonger is not current user")
 	// 	return

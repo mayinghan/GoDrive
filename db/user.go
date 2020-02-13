@@ -5,6 +5,7 @@ import (
 	"GoDrive/utils"
 	"database/sql"
 	"fmt"
+	"regexp"
 )
 
 const salt = "&6ty"
@@ -19,18 +20,28 @@ type RegInfo struct {
 
 // LoginInfo is the login input : username and password
 type LoginInfo struct {
-	Username string `json:"input" binding:"required"`
+	Input    string `json:"input" binding:"required"`
 	Password string `json:"password" binding:"required"`
 }
 
-//UserLogin checks against the database for an existing user. Returns a bool and server message
-func UserLogin(loginInfo *LoginInfo) (bool, string, error) {
+func checkEmailFormat(input string) bool {
+	pattern := `^\w+([-+.]\w+)*@\w+([-.]\w+)*\.[a-zA-Z]{2,4}$`
+	reg := regexp.MustCompile(pattern)
+	return reg.MatchString(input)
+}
 
-	var comparePwd string
-	username := loginInfo.Username
+//UserLogin checks against the database for an existing user. Returns a bool and server message
+func UserLogin(loginInfo *LoginInfo) (bool, string, string, error) {
+
+	var username string
+	var email string
 	password := utils.MD5([]byte(loginInfo.Password + salt))
 
-	fmt.Printf("login input, %s\n", username)
+	if checkEmailFormat(loginInfo.Input) {
+		email = loginInfo.Input
+	}
+
+	fmt.Printf("login input, %s\n", loginInfo.Input)
 
 	stmt, err := mydb.DBConn().Prepare(
 		"select username from tbl_user where (username = ? or email = ?) and password = ?")
@@ -38,11 +49,11 @@ func UserLogin(loginInfo *LoginInfo) (bool, string, error) {
 	if err != nil {
 		e := fmt.Sprint("Internal server error: Failed to retrieve user from DB1")
 		fmt.Println(e + err.Error())
-		return false, e, err
+		return false, username, e, err
 	}
 	defer stmt.Close()
 
-	err = stmt.QueryRow(username, username, password).Scan(&comparePwd)
+	err = stmt.QueryRow(loginInfo.Input, email, password).Scan(&username)
 
 	if err != nil {
 		var e string
@@ -52,10 +63,10 @@ func UserLogin(loginInfo *LoginInfo) (bool, string, error) {
 			e = fmt.Sprint("Internal server error: Failed to retrieve user from DB3.")
 		}
 		fmt.Println(e + err.Error())
-		return false, e, err
+		return false, username, e, err
 	}
 
-	return true, "Successfully logged in!", nil
+	return true, username, "Successfully logged in!", nil
 
 }
 
