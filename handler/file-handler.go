@@ -4,51 +4,83 @@ import (
 	"GoDrive/meta"
 	"GoDrive/utils"
 	"encoding/json"
-	"fmt"
-	"io"
 	"io/ioutil"
 	"net/http"
 	"os"
 	"strconv"
 	"time"
+
+	"github.com/gin-gonic/gin"
 )
 
-// fileMetaResponse contains the file meta info struct and error messages
-type fileMetaResponse struct {
-	FileMeta   *meta.FileMeta `json:"meta,omitempty"`
-	StatusCode int            `json:"code"`
-	Msg        string         `json:"msg"`
-}
-
-//fileErrorResponse creates a file meta reponse object that contains the error
-func fileErrorResponse(c int, msg string) (fmr fileMetaResponse) {
-	fmr = fileMetaResponse{
-		StatusCode: c,
-		Msg:        msg,
+// UploadHandler handels file upload
+func UploadHandler(c *gin.Context) {
+	head, err := c.FormFile("file")
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"code":  406,
+			"msg":   "Could not receive file.",
+			"error": err.Error(),
+		})
+		return
 	}
+
+	fileMeta := meta.FileMeta{
+		FileName: head.Filename,
+		Location: "C://Users/liuwi/Desktop/tmp/" + head.Filename,
+		UploadAt: time.Now().Format("2006-01-02 15:04:05"),
+	}
+
+	err = c.SaveUploadedFile(head, fileMeta.Location)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"code":  500,
+			"msg":   "Internal Server Error: Failed to save file to the DB.",
+			"error": err.Error(),
+		})
+		return
+	}
+
+	newFile, err := os.Open(fileMeta.Location)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"code":  500,
+			"msg":   "Internal Server Error: Failed to save file to the DB.",
+			"error": err.Error(),
+		})
+		return
+	}
+	defer newFile.Close()
+	newFileInfo, err := newFile.Stat()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"code":  500,
+			"msg":   "Internal Server Error: Failed to save file to the DB.",
+			"error": err.Error(),
+		})
+		return
+	}
+
+	// update file meta hashmap
+	fileMeta.FileSize = newFileInfo.Size()
+	fileMeta.FileSha1 = utils.FileSHA1(newFile)
+	// upload meta data to DB
+	_ = meta.UpdateFileMetaDB(fileMeta)
+
+	c.JSON(http.StatusOK, gin.H{
+		"code": 200,
+		"msg":  "File successfully uploaded!",
+		"data": struct {
+			FileMeta *meta.FileMeta `json:"meta"`
+		}{
+			FileMeta: &fileMeta,
+		},
+	})
 	return
 }
 
-//returnFileRespJSON writes Json message to front-end
-func returnFileRespJSON(w http.ResponseWriter, v fileMetaResponse) {
-	js, err := json.Marshal(v)
-	if err != nil {
-		e := fmt.Sprintf("Failed to create json object %s\n", err)
-		panic(e)
-		// return
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	if v.StatusCode != 200 {
-		w.WriteHeader(v.StatusCode)
-	} else {
-		w.WriteHeader(200)
-	}
-	w.Write(js)
-}
-
 // UploadHandler handles file upload
-func UploadHandler(w http.ResponseWriter, r *http.Request) {
+/* func UploadHandler(w http.ResponseWriter, r *http.Request) {
 	// if r.Method == "GET" {
 	// 	// return upload file page
 	// 	page, err := ioutil.ReadFile("./static/view/upload.html")
@@ -110,10 +142,46 @@ func UploadHandler(w http.ResponseWriter, r *http.Request) {
 	returnFileRespJSON(w, fmr)
 	// http.Redirect(w, r, "/file/upload/success", http.StatusFound)
 	// }
+} */
+
+// GetFileMetaHandler gets the meta data of the given file from request.form
+func GetFileMetaHandler(c *gin.Context) {
+	var filehash string
+	if err := c.ShouldBindJSON(&filehash); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"code": 500,
+			"msg":  err.Error(),
+		})
+		panic(err)
+	}
+
+	// c.Request.ParseForm()
+	// fmt.Printf("%v\n", c.Request)
+	// filehash := c.Request.Form["filehash"][0]
+	filemeta, err := meta.GetFileMetaDB(filehash)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"code":  500,
+			"msg":   "Internal Server Error: Failed to retrieve file meta.",
+			"error": err.Error(),
+		})
+		return
+	}
+
+	data, err := json.Marshal(filemeta)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"code":  500,
+			"msg":   "Internal Server Error: Failed to retrieve file meta.",
+			"error": err.Error(),
+		})
+		return
+	}
+	c.Writer.Write(data)
 }
 
 // GetFileMetaHandler gets the meta data of the given file from request.form
-func GetFileMetaHandler(w http.ResponseWriter, r *http.Request) {
+/* func GetFileMetaHandler(w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()
 	fmt.Printf("%v\n", r)
 	filehash := r.Form["filehash"][0]
@@ -131,10 +199,38 @@ func GetFileMetaHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Write(data)
+} */
+
+// QueryByBatchHandler : query the last `n` files' info. Query file meta by batch.
+func QueryByBatchHandler(c *gin.Context) {
+	var lim string
+	if err := c.ShouldBindJSON(&lim); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"code": 500,
+			"msg":  err.Error(),
+		})
+		panic(err)
+	}
+
+	// "limit": how many files the user want to query
+	count, _ := strconv.Atoi(lim)
+	fMetas := meta.GetLastFileMetas(count)
+
+	// return to client as a JSON
+	data, err := json.Marshal(fMetas)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"code":  500,
+			"msg":   "Internal Server Error: Failed to query file information.",
+			"error": err.Error(),
+		})
+		return
+	}
+	c.Writer.Write(data)
 }
 
 // QueryByBatchHandler : query the last `n` files' info. Query file meta by batch.
-func QueryByBatchHandler(w http.ResponseWriter, r *http.Request) {
+/* func QueryByBatchHandler(w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()
 
 	// "limit": how many files the user want to query
@@ -151,10 +247,50 @@ func QueryByBatchHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Write(data)
+} */
+
+// DownloadHandler : download file
+func DownloadHandler(c *gin.Context) {
+	var fileSha1 string
+	if err := c.ShouldBindJSON(&fileSha1); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"code": 500,
+			"msg":  err.Error(),
+		})
+		panic(err)
+	}
+	metaInfo := meta.GetFileMeta(fileSha1)
+
+	f, err := os.Open(metaInfo.Location)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"code":     500,
+			"msg":      "Internal Server Error: Failed to open file for download.",
+			"error":    err.Error(),
+			"location": metaInfo.Location,
+		})
+		return
+	}
+	defer f.Close()
+
+	// read file into RAM. Assuming the file size is not large
+	data, err := ioutil.ReadAll(f)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"code":  500,
+			"msg":   "Internal Server Error: Failed to read file for download.",
+			"error": err.Error(),
+		})
+		return
+	}
+
+	c.Writer.Header().Set("Content-Type", "appllication/octect-stream")
+	c.Writer.Header().Set("Content-Disposition", "attatchment; filename=\""+metaInfo.FileName+"\"")
+	c.Writer.Write(data)
 }
 
 // DownloadHandler : download file
-func DownloadHandler(w http.ResponseWriter, r *http.Request) {
+/*func DownloadHandler(w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()
 
 	fsha1 := r.Form.Get("filehash")
@@ -182,10 +318,49 @@ func DownloadHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "appllication/octect-stream")
 	w.Header().Set("Content-Disposition", "attatchment; filename=\""+metaInfo.FileName+"\"")
 	w.Write(data)
+} */
+
+// FileUpdateHandler : renames file
+func FileUpdateHandler(c *gin.Context) {
+	// only accept post request
+	if c.Request.Method != "POST" {
+		c.JSON(http.StatusMethodNotAllowed, gin.H{
+			"code": 405,
+			"msg":  "Status Method Not Allowed: Failed to update file - POST request only.",
+		})
+		return
+	}
+	c.Request.ParseForm()
+	operationType := c.Request.Form.Get("op") // for future use: expand operation type to not only renaming file
+	fileSha1 := c.Request.Form.Get("filehash")
+	newFileName := c.Request.Form.Get("filename")
+
+	if operationType != "update-name" {
+		c.JSON(http.StatusForbidden, gin.H{
+			"code": 403,
+			"msg":  "Status Forbidden: Failed to update file name.",
+		})
+		return
+	}
+
+	currFileMeta := meta.GetFileMeta(fileSha1)
+	currFileMeta.FileName = newFileName
+	meta.UpdateFileMeta(currFileMeta)
+
+	c.JSON(http.StatusOK, gin.H{
+		"code": 200,
+		"msg":  "File successfully updated!",
+		"data": struct {
+			FileMeta *meta.FileMeta `json:"meta"`
+		}{
+			FileMeta: &currFileMeta,
+		},
+	})
+	return
 }
 
 // FileUpdateHandler : rename file
-func FileUpdateHandler(w http.ResponseWriter, r *http.Request) {
+/*func FileUpdateHandler(w http.ResponseWriter, r *http.Request) {
 	// only accept post request
 	if r.Method != "POST" {
 		fmr := fileErrorResponse(405, "failed to update file. post request only")
@@ -227,9 +402,10 @@ func FileUpdateHandler(w http.ResponseWriter, r *http.Request) {
 	//w.WriteHeader(http.StatusOK)
 	//w.Write(data)
 }
+*/
 
 // FileDeleteHandler : delete the file (soft-delete by using a flag)
-func FileDeleteHandler(w http.ResponseWriter, r *http.Request) {
+/*func FileDeleteHandler(w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()
 	fileSha1 := r.Form.Get("filehash")
 	fileMeta, err := meta.GetFileMetaDB(fileSha1)
@@ -242,4 +418,41 @@ func FileDeleteHandler(w http.ResponseWriter, r *http.Request) {
 	os.Remove(fileMeta.Location)
 	meta.RemoveMeta(fileSha1)
 	w.WriteHeader(http.StatusOK)
+} */
+
+// FileDeleteHandler : delete the file (soft-delete by using a flag)
+func FileDeleteHandler(c *gin.Context) {
+	var fileSha1 string
+	if err := c.ShouldBindJSON(&fileSha1); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"code": 500,
+			"msg":  err.Error(),
+		})
+		panic(err)
+	}
+	fileMeta, err := meta.GetFileMetaDB(fileSha1)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"code":  500,
+			"msg":   "Internal server error: Failed to delete file from the database.",
+			"error": err.Error(),
+		})
+		return
+	}
+	removeFromDB := meta.RemoveMetaDB(fileSha1)
+	if !removeFromDB {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"code":  500,
+			"msg":   "Internal server error: Failed to delete file from the database.",
+			"error": err.Error(),
+		})
+		return
+	}
+	os.Remove(fileMeta.Location)
+	meta.RemoveMeta(fileSha1)
+	c.JSON(http.StatusOK, gin.H{
+		"code": 200,
+		"msg":  "File successfully deleted!",
+	})
+	return
 }
