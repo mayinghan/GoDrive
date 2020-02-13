@@ -7,11 +7,14 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
+	"runtime/internal/sys"
 	"strconv"
 	"time"
 
 	"github.com/gin-gonic/gin"
 )
+
+const goos string = sys.GOOS
 
 // UploadHandler handels file upload
 func UploadHandler(c *gin.Context) {
@@ -25,9 +28,15 @@ func UploadHandler(c *gin.Context) {
 		return
 	}
 
+	var basepath string
+	if goos == "darwin" {
+		basepath = "/tmp/"
+	} else {
+		basepath = "C://Users/liuwi/Desktop/tmp/"
+	}
 	fileMeta := meta.FileMeta{
 		FileName: head.Filename,
-		Location: "C://Users/liuwi/Desktop/tmp/" + head.Filename,
+		Location: basepath + head.Filename,
 		UploadAt: time.Now().Format("2006-01-02 15:04:05"),
 	}
 
