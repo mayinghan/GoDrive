@@ -165,11 +165,8 @@ func RegisterHandler(c *gin.Context) {
 
 // SendVerifyEmailHandler : send verify code to user email to finish registration
 func SendVerifyEmailHandler(c *gin.Context) {
-	type verifyEmail struct {
-		Email string `json:"email" form:"email" binding:"required"`
-	}
 
-	var vrfEmail verifyEmail
+	var vrfEmail db.VerifyEmail
 	if err := c.ShouldBind(&vrfEmail); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"msg":   "Internal error happened",
@@ -178,38 +175,48 @@ func SendVerifyEmailHandler(c *gin.Context) {
 		})
 		panic(err)
 	}
+	suc, msg, err := db.CheckEmail(&vrfEmail)
+	if suc {
+		// get redis pool connection
+		redisConn := cache.EmailVeriPool().Get()
+		defer redisConn.Close()
 
-	// get redis pool connection
-	redisConn := cache.EmailVeriPool().Get()
-	defer redisConn.Close()
+		// check current user email
+		currTimestamp := time.Now().UTC().Unix()
+		storedTime, err := redis.Uint64(redisConn.Do("HGET", vrfEmail.Email, "create_at"))
+		if err != nil {
+			fmt.Printf("redis get previous created time failed %v\n", err)
+			storedTime = 0
+		}
 
-	// check current user email
-	currTimestamp := time.Now().UTC().Unix()
-	storedTime, err := redis.Uint64(redisConn.Do("HGET", vrfEmail.Email, "create_at"))
-	if err != nil {
-		fmt.Printf("redis get previous created time failed %v\n", err)
-		storedTime = 0
-	}
+		if storedTime != 0 && currTimestamp-int64(storedTime) < config.SendCodeCoolDown {
+			fmt.Println("dont send email again")
+			c.JSON(http.StatusBadRequest, gin.H{
+				"code": 1,
+				"msg":  "Send request too fast! Please wait " + strconv.FormatInt(config.SendCodeCoolDown+10, 10) + "s to resend the code",
+			})
+			return
+		}
 
-	if storedTime != 0 && currTimestamp-int64(storedTime) < config.SendCodeCoolDown {
-		fmt.Println("dont send email again")
+		rand.Seed(currTimestamp)
+		code := rand.Intn(899999) + 100000
+		s := strconv.Itoa(code)
+		redisConn.Do("HMSET", vrfEmail.Email, "create_at", currTimestamp, "code", code)
+		// code expires after 10 min
+		redisConn.Do("EXPIRE", vrfEmail.Email, 600)
+		fmt.Println(s)
+		err = utils.SendMail(vrfEmail.Email, s)
+		if err != nil {
+			panic(err)
+		}
+	} else {
+		fmt.Println("email already exists")
 		c.JSON(http.StatusBadRequest, gin.H{
-			"code": 1,
-			"msg":  "Send request too fast! Please wait " + strconv.FormatInt(config.SendCodeCoolDown+10, 10) + "s to resend the code",
+			"code":  1,
+			"msg":   msg,
+			"error": err.Error(),
 		})
 		return
-	}
-
-	rand.Seed(currTimestamp)
-	code := rand.Intn(899999) + 100000
-	s := strconv.Itoa(code)
-	redisConn.Do("HMSET", vrfEmail.Email, "create_at", currTimestamp, "code", code)
-	// code expires after 10 min
-	redisConn.Do("EXPIRE", vrfEmail.Email, 600)
-	fmt.Println(s)
-	err = utils.SendMail(vrfEmail.Email, s)
-	if err != nil {
-		panic(err)
 	}
 }
 
