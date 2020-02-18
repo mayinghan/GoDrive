@@ -38,13 +38,14 @@ func GetFileChunk(c *gin.Context) {
 
 	fileuser := strings.Split(uploadID, "-")[0]
 	fmt.Println(fileuser)
+
 	// if username != fileuser {
 	// 	fmt.Println("Authentication error, uploadId belonger is not current user")
 	// 	return
 	// }
 
 	fmt.Printf("filename : %s\nuploadId: %s\n", filename, uploadID)
-	tempPath := "/tmp/" + filehash + "/" + chunkID
+	tempPath := "/tmp/files/" + filehash + "/" + chunkID
 	os.MkdirAll(path.Dir(tempPath), 0744)
 
 	if err := c.SaveUploadedFile(chunk, tempPath); err != nil {

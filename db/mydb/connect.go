@@ -4,6 +4,8 @@ import (
 	"database/sql"
 	"fmt"
 	"os"
+	"time"
+
 	// blank import, bind it to database/sql
 	_ "github.com/go-sql-driver/mysql"
 )
@@ -20,6 +22,8 @@ func init() {
 	db = tmp
 	// if open the server successfully
 	db.SetMaxOpenConns(10)
+	db.SetMaxIdleConns(10)
+	db.SetConnMaxLifetime(30 * time.Minute)
 	// check if the db connection is dead
 	err = db.Ping()
 

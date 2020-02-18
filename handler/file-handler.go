@@ -7,34 +7,43 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
+	"runtime"
 	"strconv"
 	"time"
 
 	"github.com/gin-gonic/gin"
 )
 
+const goos string = runtime.GOOS
+
 // UploadHandler handels file upload
 func UploadHandler(c *gin.Context) {
 	head, err := c.FormFile("file")
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
-			"code":  406,
+			"code":  1,
 			"msg":   "Could not receive file.",
 			"error": err.Error(),
 		})
 		return
 	}
 
+	var basepath string
+	if goos == "darwin" {
+		basepath = "/tmp/"
+	} else {
+		basepath = "C://Users/liuwi/Desktop/tmp/"
+	}
 	fileMeta := meta.FileMeta{
 		FileName: head.Filename,
-		Location: "C://Users/liuwi/Desktop/tmp/" + head.Filename,
+		Location: basepath + head.Filename,
 		UploadAt: time.Now().Format("2006-01-02 15:04:05"),
 	}
 
 	err = c.SaveUploadedFile(head, fileMeta.Location)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
-			"code":  500,
+			"code":  1,
 			"msg":   "Internal Server Error: Failed to save file to the DB.",
 			"error": err.Error(),
 		})
@@ -44,7 +53,7 @@ func UploadHandler(c *gin.Context) {
 	newFile, err := os.Open(fileMeta.Location)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
-			"code":  500,
+			"code":  1,
 			"msg":   "Internal Server Error: Failed to save file to the DB.",
 			"error": err.Error(),
 		})
@@ -54,7 +63,7 @@ func UploadHandler(c *gin.Context) {
 	newFileInfo, err := newFile.Stat()
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
-			"code":  500,
+			"code":  1,
 			"msg":   "Internal Server Error: Failed to save file to the DB.",
 			"error": err.Error(),
 		})
@@ -68,7 +77,7 @@ func UploadHandler(c *gin.Context) {
 	_ = meta.UpdateFileMetaDB(fileMeta)
 
 	c.JSON(http.StatusOK, gin.H{
-		"code": 200,
+		"code": 0,
 		"msg":  "File successfully uploaded!",
 		"data": struct {
 			FileMeta *meta.FileMeta `json:"meta"`
@@ -149,7 +158,7 @@ func GetFileMetaHandler(c *gin.Context) {
 	var filehash string
 	if err := c.ShouldBindJSON(&filehash); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
-			"code": 500,
+			"code": 1,
 			"msg":  err.Error(),
 		})
 		panic(err)
@@ -161,7 +170,7 @@ func GetFileMetaHandler(c *gin.Context) {
 	filemeta, err := meta.GetFileMetaDB(filehash)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
-			"code":  500,
+			"code":  1,
 			"msg":   "Internal Server Error: Failed to retrieve file meta.",
 			"error": err.Error(),
 		})
@@ -171,7 +180,7 @@ func GetFileMetaHandler(c *gin.Context) {
 	data, err := json.Marshal(filemeta)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
-			"code":  500,
+			"code":  1,
 			"msg":   "Internal Server Error: Failed to retrieve file meta.",
 			"error": err.Error(),
 		})
@@ -206,7 +215,7 @@ func QueryByBatchHandler(c *gin.Context) {
 	var lim string
 	if err := c.ShouldBindJSON(&lim); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
-			"code": 500,
+			"code": 1,
 			"msg":  err.Error(),
 		})
 		panic(err)
@@ -220,7 +229,7 @@ func QueryByBatchHandler(c *gin.Context) {
 	data, err := json.Marshal(fMetas)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
-			"code":  500,
+			"code":  1,
 			"msg":   "Internal Server Error: Failed to query file information.",
 			"error": err.Error(),
 		})
@@ -254,7 +263,7 @@ func DownloadHandler(c *gin.Context) {
 	var fileSha1 string
 	if err := c.ShouldBindJSON(&fileSha1); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
-			"code": 500,
+			"code": 1,
 			"msg":  err.Error(),
 		})
 		panic(err)
@@ -264,7 +273,7 @@ func DownloadHandler(c *gin.Context) {
 	f, err := os.Open(metaInfo.Location)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
-			"code":     500,
+			"code":     1,
 			"msg":      "Internal Server Error: Failed to open file for download.",
 			"error":    err.Error(),
 			"location": metaInfo.Location,
@@ -277,7 +286,7 @@ func DownloadHandler(c *gin.Context) {
 	data, err := ioutil.ReadAll(f)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
-			"code":  500,
+			"code":  1,
 			"msg":   "Internal Server Error: Failed to read file for download.",
 			"error": err.Error(),
 		})
@@ -325,7 +334,7 @@ func FileUpdateHandler(c *gin.Context) {
 	// only accept post request
 	if c.Request.Method != "POST" {
 		c.JSON(http.StatusMethodNotAllowed, gin.H{
-			"code": 405,
+			"code": 1,
 			"msg":  "Status Method Not Allowed: Failed to update file - POST request only.",
 		})
 		return
@@ -337,7 +346,7 @@ func FileUpdateHandler(c *gin.Context) {
 
 	if operationType != "update-name" {
 		c.JSON(http.StatusForbidden, gin.H{
-			"code": 403,
+			"code": 1,
 			"msg":  "Status Forbidden: Failed to update file name.",
 		})
 		return
@@ -348,7 +357,7 @@ func FileUpdateHandler(c *gin.Context) {
 	meta.UpdateFileMeta(currFileMeta)
 
 	c.JSON(http.StatusOK, gin.H{
-		"code": 200,
+		"code": 0,
 		"msg":  "File successfully updated!",
 		"data": struct {
 			FileMeta *meta.FileMeta `json:"meta"`
@@ -425,7 +434,7 @@ func FileDeleteHandler(c *gin.Context) {
 	var fileSha1 string
 	if err := c.ShouldBindJSON(&fileSha1); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
-			"code": 500,
+			"code": 1,
 			"msg":  err.Error(),
 		})
 		panic(err)
@@ -433,7 +442,7 @@ func FileDeleteHandler(c *gin.Context) {
 	fileMeta, err := meta.GetFileMetaDB(fileSha1)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
-			"code":  500,
+			"code":  1,
 			"msg":   "Internal server error: Failed to delete file from the database.",
 			"error": err.Error(),
 		})
@@ -442,16 +451,15 @@ func FileDeleteHandler(c *gin.Context) {
 	removeFromDB := meta.RemoveMetaDB(fileSha1)
 	if !removeFromDB {
 		c.JSON(http.StatusInternalServerError, gin.H{
-			"code":  500,
-			"msg":   "Internal server error: Failed to delete file from the database.",
-			"error": err.Error(),
+			"code": 1,
+			"msg":  "Internal server error: Failed to delete file from the database.",
 		})
 		return
 	}
 	os.Remove(fileMeta.Location)
 	meta.RemoveMeta(fileSha1)
 	c.JSON(http.StatusOK, gin.H{
-		"code": 200,
+		"code": 0,
 		"msg":  "File successfully deleted!",
 	})
 	return

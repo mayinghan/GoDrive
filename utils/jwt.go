@@ -24,6 +24,7 @@ func Gentoken(username string) (string, error) {
 		jwt.StandardClaims{
 			ExpiresAt: expTime.Unix(),
 			Issuer:    "godrivedev",
+			IssuedAt:  time.Now().Unix(),
 		},
 	}
 
