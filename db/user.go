@@ -24,6 +24,38 @@ type LoginInfo struct {
 	Password string `json:"password" binding:"required"`
 }
 
+// VerifyEmail is the email input during registration
+type VerifyEmail struct {
+	Email string `json:"email" form:"email" binding:"required"`
+}
+
+// CheckEmail checks against the database for an existing email. Returns a bool and server message
+func CheckEmail(email *VerifyEmail) (bool, string, error) {
+	var compareEmail string
+	userEmail := email.Email
+	stmt, err := mydb.DBConn().Prepare(
+		"select email from tbl_user where email = ?")
+	if err != nil {
+		e := fmt.Sprint("Internal server error: Failed to retrieve user from DB")
+		fmt.Println(e + err.Error())
+		return false, e, err
+	}
+	defer stmt.Close()
+
+	err = stmt.QueryRow(userEmail).Scan(&compareEmail)
+	var e string
+	if err != nil {
+		if err == sql.ErrNoRows {
+			e = fmt.Sprint("Email has not been used!")
+			return true, e, err
+		}
+	}
+	e = fmt.Sprint("Internal server error: Email exists.")
+	fmt.Println(e + err.Error())
+	return false, e, err
+
+}
+
 func checkEmailFormat(input string) bool {
 	pattern := `^\w+([-+.]\w+)*@\w+([-.]\w+)*\.[a-zA-Z]{2,4}$`
 	reg := regexp.MustCompile(pattern)
@@ -47,7 +79,7 @@ func UserLogin(loginInfo *LoginInfo) (bool, string, string, error) {
 		"select username from tbl_user where (username = ? or email = ?) and password = ?")
 
 	if err != nil {
-		e := fmt.Sprint("Internal server error: Failed to retrieve user from DB1")
+		e := fmt.Sprint("Internal server error: Failed to retrieve user from DB")
 		fmt.Println(e + err.Error())
 		return false, username, e, err
 	}
@@ -60,7 +92,7 @@ func UserLogin(loginInfo *LoginInfo) (bool, string, string, error) {
 		if err == sql.ErrNoRows {
 			e = fmt.Sprint("Unauthorized error: Failed to find user with that username/password.")
 		} else {
-			e = fmt.Sprint("Internal server error: Failed to retrieve user from DB3.")
+			e = fmt.Sprint("Internal server error: Failed to retrieve user from DB.")
 		}
 		fmt.Println(e + err.Error())
 		return false, username, e, err
