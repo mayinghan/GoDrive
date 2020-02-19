@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"GoDrive/config"
 	"fmt"
 	"net/http"
 	"os"
@@ -43,9 +44,9 @@ func GetFileChunk(c *gin.Context) {
 	// 	fmt.Println("Authentication error, uploadId belonger is not current user")
 	// 	return
 	// }
-
+	chunkRootPath := config.ChunkFileStoreDirectory
 	fmt.Printf("filename : %s\nuploadId: %s\n", filename, uploadID)
-	tempPath := "/tmp/files/" + filehash + "/" + chunkID
+	tempPath := chunkRootPath + filehash + "/" + chunkID
 	os.MkdirAll(path.Dir(tempPath), 0744)
 
 	if err := c.SaveUploadedFile(chunk, tempPath); err != nil {

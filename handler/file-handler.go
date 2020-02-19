@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"GoDrive/config"
 	"GoDrive/meta"
 	"GoDrive/utils"
 	"encoding/json"
@@ -28,12 +29,7 @@ func UploadHandler(c *gin.Context) {
 		return
 	}
 
-	var basepath string
-	if goos == "darwin" {
-		basepath = "/tmp/"
-	} else {
-		basepath = "C://Users/liuwi/Desktop/tmp/"
-	}
+	var basepath string = config.WholeFileStoreLocation
 	fileMeta := meta.FileMeta{
 		FileName: head.Filename,
 		Location: basepath + head.Filename,
