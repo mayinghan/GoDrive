@@ -16,18 +16,17 @@ func Router() *gin.Engine {
 	router.GET("/api/user/verify", handler.SendVerifyEmailHandler)
 	router.POST("/api/user/login", handler.LoginHandler)
 
+	router.Use(middleware.JWT())
+
+	router.GET("/api/user/info", handler.UserInfo)
+
+	router.POST("/api/file/uploadchunk", handler.GetFileChunk)
 	router.POST("/api/file/upload", handler.UploadHandler)
 	router.GET("/api/file/getfilemeta", handler.GetFileMetaHandler)
 	router.GET("/api/file/querybatch", handler.QueryByBatchHandler)
 	router.GET("/api/file/download", handler.DownloadHandler)
 	router.POST("/api/file/update", handler.FileUpdateHandler)
 	router.DELETE("/api/file/delete", handler.FileDeleteHandler)
-
-	router.Use(middleware.JWT())
-
-	router.GET("/api/user/info", handler.UserInfo)
-
-	router.POST("/api/file/uploadchunk", handler.GetFileChunk)
 
 	return router
 }

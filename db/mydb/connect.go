@@ -1,6 +1,7 @@
 package mydb
 
 import (
+	"GoDrive/config"
 	"database/sql"
 	"fmt"
 	"os"
@@ -13,7 +14,7 @@ import (
 var db *sql.DB
 
 func init() {
-	tmp, err := sql.Open("mysql", "root:123456@tcp(127.0.0.1:13306)/fileserver?charset=utf8")
+	tmp, err := sql.Open("mysql", config.DataSourceName)
 	if err != nil {
 		fmt.Println(err.Error())
 		fmt.Println("Failed to connect to mysql server")

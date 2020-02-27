@@ -7,8 +7,14 @@ CREATE TABLE `tbl_userfile` (
   `upload_at` datetime DEFAULT CURRENT_TIMESTAMP COMMENT 'upload time',
   `last_update` datetime DEFAULT CURRENT_TIMESTAMP 
           ON UPDATE CURRENT_TIMESTAMP COMMENT 'last update time',
-  `status` int(11) NOT NULL DEFAULT '0' COMMENT 'file status (0:available 1:deleted 2: banned)',
+  `status` int(11) NOT NULL DEFAULT '0' COMMENT 'file status (0:available 1:deleted 2: banned)', //removed
   UNIQUE KEY `idx_user_file` (`username`, `hash`),
   KEY `idx_status` (`status`),
   KEY `idx_user_id` (`username`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+
+//remove status column
+
+ALTER TABLE tbl_userfile
+DROP status;

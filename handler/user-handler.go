@@ -223,7 +223,7 @@ func SendVerifyEmailHandler(c *gin.Context) {
 
 // UserInfo : Query user info
 func UserInfo(c *gin.Context) {
-	// gettting username
+	// getting username
 	username, exist := c.Get("username")
 	if exist {
 		fmt.Printf("username: %s\n", username)
