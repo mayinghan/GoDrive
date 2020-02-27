@@ -6,6 +6,7 @@ import (
 	"GoDrive/utils"
 	"encoding/json"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"os"
 	"runtime"
@@ -68,7 +69,9 @@ func UploadHandler(c *gin.Context) {
 
 	// update file meta hashmap
 	fileMeta.FileSize = newFileInfo.Size()
-	fileMeta.FileSha1 = utils.FileSHA1(newFile)
+	fileMeta.FileSha1 = utils.FileMD5(newFile)
+
+	log.Printf("file hash is %s", fileMeta.FileSha1)
 	// upload meta data to DB
 	_ = meta.UpdateFileMetaDB(fileMeta)
 

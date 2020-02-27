@@ -2,10 +2,14 @@ package handler
 
 import (
 	"GoDrive/config"
+	"GoDrive/utils"
 	"fmt"
+	"io/ioutil"
+	"log"
 	"net/http"
 	"os"
 	"path"
+	"path/filepath"
 	"strings"
 
 	"github.com/gin-gonic/gin"
@@ -13,7 +17,7 @@ import (
 
 // GetFileChunk receives the file chunks
 func GetFileChunk(c *gin.Context) {
-	_, exist := c.Get("username")
+	username, exist := c.Get("username")
 	if !exist {
 		fmt.Println("Get username from context failed")
 		c.JSON(200, gin.H{
@@ -38,14 +42,15 @@ func GetFileChunk(c *gin.Context) {
 	filehash := c.PostForm("filehash")
 
 	fileuser := strings.Split(uploadID, "-")[0]
-	fmt.Println(fileuser)
+	log.Println("current user's username", fileuser)
 
-	// if username != fileuser {
-	// 	fmt.Println("Authentication error, uploadId belonger is not current user")
-	// 	return
-	// }
+	if username != fileuser {
+		log.Println("Authentication error, uploadId belonger is not current user")
+		return
+	}
+
 	chunkRootPath := config.ChunkFileStoreDirectory
-	fmt.Printf("filename : %s\nuploadId: %s\n", filename, uploadID)
+	log.Printf("filename : %s\nuploadId: %s\n", filename, uploadID)
 	tempPath := chunkRootPath + filehash + "/" + chunkID
 	os.MkdirAll(path.Dir(tempPath), 0744)
 
@@ -59,4 +64,60 @@ func GetFileChunk(c *gin.Context) {
 		"msg":  chunkID + " upload suc",
 	})
 	return
+}
+
+// CheckIntegrity checks the file hash again to make sure the file is not modified
+func CheckIntegrity(c *gin.Context) {
+	type body struct {
+		Filehash    string `json:"filehash"`
+		Filename    string `json:"filename"`
+		UploadID    string `json:"uploadId"`
+		ChunkLength int    `json:"chunkLength,string"`
+	}
+
+	var b body
+	if err := c.ShouldBindJSON(&b); err != nil {
+		c.JSON(200, gin.H{
+			"code": 1,
+			"msg":  err.Error(),
+		})
+		panic(err)
+	}
+
+	log.Printf("Checking integrity.. Filename: %s, Filehash: %s", b.Filename, b.Filehash)
+
+	mdhash := new(utils.MD5Stream)
+	folder := config.ChunkFileStoreDirectory + b.Filehash + "/"
+	counter := 0
+
+	filepath.Walk(folder, func(path string, info os.FileInfo, err error) error {
+		counter++
+		return nil
+	})
+
+	// missing chunks
+	if counter != b.ChunkLength {
+		c.JSON(200, gin.H{
+			"code": 1,
+			"msg":  "Missing chunks",
+		})
+		return
+	}
+
+	// iterate files
+	filepath.Walk(folder, func(path string, info os.FileInfo, err error) error {
+		f, err := ioutil.ReadFile(path)
+		mdhash.Update(f)
+		return nil
+	})
+	hash := mdhash.Sum()
+	log.Printf("hash after server calculation is: %s\n", hash)
+
+	c.JSON(200, gin.H{
+		"code": 0,
+		"msg":  "",
+		"data": gin.H{
+			"Hash server calculation": hash,
+		},
+	})
 }

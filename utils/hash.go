@@ -15,6 +15,11 @@ type Sha1Stream struct {
 	_sha1 hash.Hash
 }
 
+// MD5Stream is the stream of md5 checksum
+type MD5Stream struct {
+	_md5 hash.Hash
+}
+
 // Update the Sha1Stream with the given value
 func (s *Sha1Stream) Update(data []byte) {
 	if s._sha1 == nil {
@@ -27,6 +32,20 @@ func (s *Sha1Stream) Update(data []byte) {
 // Sum returns a hex string of the checksum of current hash
 func (s *Sha1Stream) Sum() string {
 	return hex.EncodeToString(s._sha1.Sum([]byte("")))
+}
+
+// Update md5 stream
+func (m *MD5Stream) Update(data []byte) {
+	if m._md5 == nil {
+		m._md5 = md5.New()
+	}
+
+	m._md5.Write(data)
+}
+
+// Sum returns the md5 checksum of the current hash
+func (m *MD5Stream) Sum() string {
+	return hex.EncodeToString(m._md5.Sum([]byte("")))
 }
 
 // Sha1 returns the hex string of the SHA1 hased checksum of input []byte

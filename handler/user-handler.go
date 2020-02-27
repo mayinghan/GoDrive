@@ -6,6 +6,7 @@ import (
 	"GoDrive/db"
 	"GoDrive/utils"
 	"fmt"
+	"log"
 	"math/rand"
 	"net/http"
 	"strconv"
@@ -29,7 +30,7 @@ func LoginHandler(c *gin.Context) {
 		panic(err)
 	}
 
-	fmt.Printf("%v\n", userInput)
+	log.Printf("%v\n", userInput)
 
 	suc, username, msg, err := db.UserLogin(&userInput)
 
