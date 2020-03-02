@@ -26,9 +26,10 @@ func UpdateFileMeta(fm FileMeta) {
 	fileMetas[fm.FileSha1] = fm
 }
 
-// UpdateFileMetaDB : add/modify file meta into DB
-func UpdateFileMetaDB(fm FileMeta) bool {
-	return db.OnFileUploadFinished(fm.FileSha1, fm.FileName, fm.FileSize, fm.Location)
+// UpdateFileMetaDB : add/modify file meta into tbl_file and tbl_userfile DBs
+func UpdateFileMetaDB(fm FileMeta, username string) bool {
+	return db.OnFileUploadFinished(fm.FileSha1, fm.FileName, fm.FileSize, fm.Location) &&
+		db.OnFileUploadUser(username, fm.FileSha1, fm.FileSize, fm.FileName)
 }
 
 // GetFileMeta : get FileMeta struct based on give SHA1 hash code
@@ -90,9 +91,12 @@ func RemoveMeta(fileSha1 string) {
 	delete(fileMetas, fileSha1)
 }
 
-// RemoveMetaDB removes a file meta from the db
-func RemoveMetaDB(filesha string) bool {
-	return db.OnFileRemoved(filesha)
+// RemoveMetaDB removes a file meta from the db (remove success, delete meta)
+func RemoveMetaDB(username string, filesha string) (bool, bool) {
+	if db.OnFileRemoveUser(username, filesha) {
+		return db.OnFileRemoved(filesha)
+	}
+	return false, false
 }
 
 func minInt(a, b int) int {

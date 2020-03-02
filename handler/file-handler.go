@@ -5,8 +5,8 @@ import (
 	"GoDrive/meta"
 	"GoDrive/utils"
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"os"
 	"runtime"
@@ -18,7 +18,7 @@ import (
 
 const goos string = runtime.GOOS
 
-// UploadHandler handels file upload
+// UploadHandler handles file upload
 func UploadHandler(c *gin.Context) {
 	head, err := c.FormFile("file")
 	if err != nil {
@@ -69,11 +69,25 @@ func UploadHandler(c *gin.Context) {
 
 	// update file meta hashmap
 	fileMeta.FileSize = newFileInfo.Size()
-	fileMeta.FileSha1 = utils.FileMD5(newFile)
+	fileMeta.FileSha1 = utils.FileSHA1(newFile)
 
-	log.Printf("file hash is %s", fileMeta.FileSha1)
-	// upload meta data to DB
-	_ = meta.UpdateFileMetaDB(fileMeta)
+	// getting username
+	username, exist := c.Get("username")
+	if !exist {
+		fmt.Printf("Failed to find username.")
+	}
+
+	// upload meta data to databases
+	uploadDB := meta.UpdateFileMetaDB(fileMeta, username.(string))
+
+	if !uploadDB {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"code":  1,
+			"msg":   "Internal Server Error: Failed to save file to the DB.",
+			"error": err.Error(),
+		})
+		return
+	}
 
 	c.JSON(http.StatusOK, gin.H{
 		"code": 0,
@@ -447,16 +461,25 @@ func FileDeleteHandler(c *gin.Context) {
 		})
 		return
 	}
-	removeFromDB := meta.RemoveMetaDB(fileSha1)
+
+	// getting username
+	username, exist := c.Get("username")
+	if !exist {
+		fmt.Printf("Failed to find username.")
+	}
+
+	removeFromDB, delFile := meta.RemoveMetaDB(username.(string), fileSha1)
 	if !removeFromDB {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"code": 1,
-			"msg":  "Internal server error: Failed to delete file from the database.",
+			"msg":  "Internal server error: Failed to delete file from the databases.",
 		})
 		return
 	}
+	if delFile {
+		meta.RemoveMeta(fileSha1)
+	}
 	os.Remove(fileMeta.Location)
-	meta.RemoveMeta(fileSha1)
 	c.JSON(http.StatusOK, gin.H{
 		"code": 0,
 		"msg":  "File successfully deleted!",
