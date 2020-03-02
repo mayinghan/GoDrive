@@ -28,6 +28,7 @@ func Router() *gin.Engine {
 	router.GET("/api/user/info", handler.UserInfo)
 
 	router.POST("/api/file/uploadchunk", handler.GetFileChunk)
+	router.POST("/api/file/checkIntegrity", handler.CheckIntegrity)
 
 	return router
 }

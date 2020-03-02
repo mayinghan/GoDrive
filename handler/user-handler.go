@@ -233,5 +233,8 @@ func UserInfo(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"code": 0,
 		"msg":  "",
+		"data": gin.H{
+			"username": username,
+		},
 	})
 }

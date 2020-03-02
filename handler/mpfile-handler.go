@@ -10,6 +10,8 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"sort"
+	"strconv"
 	"strings"
 
 	"github.com/gin-gonic/gin"
@@ -69,10 +71,9 @@ func GetFileChunk(c *gin.Context) {
 // CheckIntegrity checks the file hash again to make sure the file is not modified
 func CheckIntegrity(c *gin.Context) {
 	type body struct {
-		Filehash    string `json:"filehash"`
-		Filename    string `json:"filename"`
-		UploadID    string `json:"uploadId"`
-		ChunkLength int    `json:"chunkLength,string"`
+		Filehash    interface{} `json:"filehash"`
+		Filename    string      `json:"filename"`
+		ChunkLength int         `json:"chunkLength"`
 	}
 
 	var b body
@@ -84,17 +85,22 @@ func CheckIntegrity(c *gin.Context) {
 		panic(err)
 	}
 
-	log.Printf("Checking integrity.. Filename: %s, Filehash: %s", b.Filename, b.Filehash)
+	fileHash := fmt.Sprintf("%v", b.Filehash)
+	log.Printf("Checking integrity.. Filename: %s, Filehash: %v", b.Filename, b.Filehash)
 
 	mdhash := new(utils.MD5Stream)
-	folder := config.ChunkFileStoreDirectory + b.Filehash + "/"
+	folder := config.ChunkFileStoreDirectory + fileHash + "/"
 	counter := 0
 
 	filepath.Walk(folder, func(path string, info os.FileInfo, err error) error {
-		counter++
+		if !info.IsDir() {
+			counter++
+		}
+
 		return nil
 	})
-
+	fmt.Println(counter)
+	fmt.Println(b.ChunkLength)
 	// missing chunks
 	if counter != b.ChunkLength {
 		c.JSON(200, gin.H{
@@ -105,19 +111,53 @@ func CheckIntegrity(c *gin.Context) {
 	}
 
 	// iterate files
-	filepath.Walk(folder, func(path string, info os.FileInfo, err error) error {
-		f, err := ioutil.ReadFile(path)
-		mdhash.Update(f)
-		return nil
-	})
+	var chunks sortedChunk
+	chunks, _ = ioutil.ReadDir(folder)
+	log.Printf("chunk count: %d\n", len(chunks))
+
+	// sort chunks based on name
+	sort.Sort(chunks)
+	for _, v := range chunks {
+		fmt.Println(v.Name())
+		chunkContent, err := ioutil.ReadFile(folder + "/" + v.Name())
+		if err != nil {
+			panic(err)
+		}
+		mdhash.Update(chunkContent)
+	}
 	hash := mdhash.Sum()
+	fmt.Println(hash)
+	if hash != fileHash {
+		c.JSON(200, gin.H{
+			"code": 1,
+			"msg":  "server file integrity checking failed! Please try to reupload",
+		})
+		return
+	}
 	log.Printf("hash after server calculation is: %s\n", hash)
 
 	c.JSON(200, gin.H{
 		"code": 0,
-		"msg":  "",
-		"data": gin.H{
-			"Hash server calculation": hash,
-		},
+		"msg":  "File uploaded successfully",
 	})
+}
+
+type sortedChunk []os.FileInfo
+
+/**
+Comparator interface for SortedChunk
+*/
+func (a sortedChunk) Len() int {
+	return len(a)
+}
+
+func (a sortedChunk) Swap(i, j int) {
+	a[i], a[j] = a[j], a[i]
+}
+
+func (a sortedChunk) Less(i, j int) bool {
+	idx1, _ := strconv.Atoi(strings.Split(a[i].Name(), "_")[1])
+	idx2, _ := strconv.Atoi(strings.Split(a[j].Name(), "_")[1])
+
+	return idx1 < idx2
 }
