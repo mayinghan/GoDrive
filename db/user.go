@@ -49,6 +49,8 @@ func CheckEmail(email *VerifyEmail) (bool, string, error) {
 			e = fmt.Sprint("Email has not been used!")
 			return true, e, err
 		}
+		e = fmt.Sprint("Internal server error")
+		return false, e, err
 	}
 	e = fmt.Sprint("Internal server error: Email exists.")
 	fmt.Println(e + err.Error())

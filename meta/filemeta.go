@@ -2,6 +2,7 @@ package meta
 
 import (
 	"GoDrive/db"
+	"fmt"
 	"sort"
 )
 
@@ -28,8 +29,20 @@ func UpdateFileMeta(fm FileMeta) {
 
 // UpdateFileMetaDB : add/modify file meta into tbl_file and tbl_userfile DBs
 func UpdateFileMetaDB(fm FileMeta, username string) bool {
-	return db.OnFileUploadFinished(fm.FileSha1, fm.FileName, fm.FileSize, fm.Location) &&
-		db.OnFileUploadUser(username, fm.FileSha1, fm.FileSize, fm.FileName)
+
+	fileSucc, err := db.OnFileUploadFinished(fm.FileSha1, fm.FileName, fm.FileSize, fm.Location)
+	userSucc, errr := db.OnFileUploadUser(username, fm.FileSha1, fm.FileSize, fm.FileName)
+
+	if err != nil {
+		fmt.Println(err.Error())
+	}
+	if errr != nil {
+		fmt.Println(errr.Error())
+	}
+	if fileSucc && userSucc {
+		return true
+	}
+	return false
 }
 
 // GetFileMeta : get FileMeta struct based on give SHA1 hash code
@@ -93,7 +106,11 @@ func RemoveMeta(fileSha1 string) {
 
 // RemoveMetaDB removes a file meta from the db (remove success, delete meta)
 func RemoveMetaDB(username string, filesha string) (bool, bool) {
-	if db.OnFileRemoveUser(username, filesha) {
+	succ, err := db.OnFileRemoveUser(username, filesha)
+	if err != nil {
+		fmt.Println(err.Error())
+	}
+	if succ {
 		return db.OnFileRemoved(filesha)
 	}
 	return false, false

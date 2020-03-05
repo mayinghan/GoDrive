@@ -15,7 +15,7 @@ type TableFile struct {
 }
 
 // OnFileUploadFinished returns a bool after the file is uploaded to db
-func OnFileUploadFinished(filehash string, filename string, filesize int64, filelocation string) bool {
+func OnFileUploadFinished(filehash string, filename string, filesize int64, filelocation string) (bool, error) {
 	// using prepared statement to prevent
 	statement, err := mydb.DBConn().Prepare(
 		/* insert ignore: if an error occured during a bacth of insertions,
@@ -27,7 +27,7 @@ func OnFileUploadFinished(filehash string, filename string, filesize int64, file
 
 	if err != nil {
 		fmt.Println("Failed to prepare statement, err: " + err.Error())
-		return false
+		return false, err
 	}
 
 	defer statement.Close()
@@ -35,18 +35,21 @@ func OnFileUploadFinished(filehash string, filename string, filesize int64, file
 	result, err := statement.Exec(filehash, filename, filesize, filelocation)
 	if err != nil {
 		fmt.Println(err.Error())
-		return false
+		return false, err
 	}
 
 	// check if the file is insert -> see how many row is affected
-	if row, err := result.RowsAffected(); err == nil {
-		if row <= 0 {
-			fmt.Printf("File with hash %s was already in DB", filehash)
-		}
-		return false
+	row, err := result.RowsAffected()
+	if err != nil {
+		fmt.Println("Failed to perform database operation")
+		return false, err
+	}
+	if row <= 0 {
+		fmt.Printf("File with hash %s was already in DB", filehash)
+		return true, err
 	}
 
-	return true
+	return true, nil
 }
 
 // GetFileMeta : query from the DB and return the TableFile
