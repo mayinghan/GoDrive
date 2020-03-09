@@ -2,8 +2,15 @@ package db
 
 import (
 	"GoDrive/db/mydb"
+	"database/sql"
 	"fmt"
 )
+
+// UserFile : a struct that correspond to a file's info in the database
+type UserFile struct {
+	FileName sql.NullString
+	FileSize sql.NullInt64
+}
 
 // OnFileUploadUser returns a bool after the file is uploaded to tbl_userfile db
 func OnFileUploadUser(username string, filehash string, filesize int64, filename string) (bool, error) {
@@ -35,7 +42,6 @@ func OnFileUploadUser(username string, filehash string, filesize int64, filename
 		fmt.Printf("User already has file with hash %s in DB", filehash)
 		return true, err
 	}
-
 	return true, nil
 }
 
@@ -62,4 +68,32 @@ func OnFileRemoveUser(username string, filehash string) (bool, error) {
 	}
 	fmt.Println("Updated table:", rows)
 	return true, nil
+}
+
+// GetAllUserFiles : Returns all files uploaded by user 'username'
+func GetAllUserFiles(user string) (bool, []UserFile, error) {
+	statement, err := mydb.DBConn().Prepare("select filename, size from tbl_userfile where username = ?")
+	if err != nil {
+		fmt.Println("Failed to prepare statement, err: " + err.Error())
+		return false, nil, err
+	}
+	defer statement.Close()
+
+	rows, err := statement.Query(user)
+	if err != nil {
+		fmt.Println(err.Error())
+		return false, nil, err
+	}
+
+	var files []UserFile
+	for rows.Next() {
+		file := UserFile{}
+		err = rows.Scan(&file.FileName, &file.FileSize)
+		if err != nil {
+			fmt.Println(err.Error())
+			break
+		}
+		files = append(files, file)
+	}
+	return true, files, nil
 }
