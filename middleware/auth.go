@@ -57,16 +57,17 @@ func JWT() gin.HandlerFunc {
 			return
 		}
 
-		log.Printf("old token expires at %d\n", clm.ExpiresAt)
+		// log.Printf("old token expires at %d\n", clm.ExpiresAt)
 		// auth suc
 		username := clm.Username
+		// bound username to the gin context "username" field
 		c.Set("username", username)
 		// refresh cookie
 		cookie, _ := c.Request.Cookie("token")
 		// refresh jwt token
 		tokenStr, err := utils.Gentoken(username)
-		newClm, _ := utils.ParseToken(tokenStr)
-		log.Printf("new token expires at %d\n", newClm.ExpiresAt)
+		// newClm, _ := utils.ParseToken(tokenStr)
+		// log.Printf("new token expires at %d\n", newClm.ExpiresAt)
 		c.SetCookie(cookie.Name, tokenStr, config.CookieLife, cookie.Path, cookie.Domain, false, false)
 
 		c.Next()

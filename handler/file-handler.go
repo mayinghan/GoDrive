@@ -2,6 +2,7 @@ package handler
 
 import (
 	"GoDrive/config"
+	"GoDrive/db"
 	"GoDrive/meta"
 	"GoDrive/utils"
 	"encoding/json"
@@ -112,9 +113,6 @@ func GetFileMetaHandler(c *gin.Context) {
 		panic(err)
 	}
 
-	// c.Request.ParseForm()
-	// fmt.Printf("%v\n", c.Request)
-	// filehash := c.Request.Form["filehash"][0]
 	filemeta, err := meta.GetFileMetaDB(filehash)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -287,4 +285,28 @@ func FileDeleteHandler(c *gin.Context) {
 		"msg":  "File successfully deleted!",
 	})
 	return
+}
+
+// InstantUpload : check if the file is already in the database by comparing the hash.
+// If so, then instant upload is triggered
+func InstantUpload(c *gin.Context) {
+	type body struct {
+		Filehash interface{} `json:"filehash"`
+	}
+
+	var b body
+	if err := c.ShouldBindJSON(&b); err != nil {
+		c.JSON(200, gin.H{
+			"code": 1,
+			"msg":  "Failed to bind request data",
+		})
+		panic(err)
+	}
+
+	fileHash := fmt.Sprintf("%v", b.Filehash)
+	dup, err := db.IsFileUploaded(fileHash)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println(dup)
 }

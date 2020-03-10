@@ -118,7 +118,6 @@ func CheckIntegrity(c *gin.Context) {
 	// sort chunks based on name
 	sort.Sort(chunks)
 	for _, v := range chunks {
-		fmt.Println(v.Name())
 		chunkContent, err := ioutil.ReadFile(folder + "/" + v.Name())
 		if err != nil {
 			panic(err)
@@ -126,7 +125,8 @@ func CheckIntegrity(c *gin.Context) {
 		mdhash.Update(chunkContent)
 	}
 	hash := mdhash.Sum()
-	fmt.Println(hash)
+
+	// panic(gin.Error{Err: errors.New("123123")})
 	if hash != fileHash {
 		c.JSON(200, gin.H{
 			"code": 1,
