@@ -19,6 +19,7 @@ func Router() *gin.Engine {
 	router.Use(middleware.JWT())
 
 	router.GET("/api/user/info", handler.UserInfo)
+	router.GET("/api/user/filelist", handler.UserFileList)
 
 	router.POST("/api/file/uploadchunk", handler.GetFileChunk)
 	router.POST("/api/file/checkIntegrity", handler.CheckIntegrity)
