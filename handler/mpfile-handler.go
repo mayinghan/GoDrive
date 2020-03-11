@@ -2,6 +2,7 @@ package handler
 
 import (
 	"GoDrive/config"
+	"GoDrive/meta"
 	"GoDrive/utils"
 	"fmt"
 	"io/ioutil"
@@ -13,6 +14,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 )
@@ -74,8 +76,10 @@ func CheckIntegrity(c *gin.Context) {
 		Filehash    interface{} `json:"filehash"`
 		Filename    string      `json:"filename"`
 		ChunkLength int         `json:"chunkLength"`
+		Filesize    int64       `json:"filesize"`
 	}
 
+	username, _ := c.Get("username")
 	var b body
 	if err := c.ShouldBindJSON(&b); err != nil {
 		c.JSON(200, gin.H{
@@ -135,6 +139,16 @@ func CheckIntegrity(c *gin.Context) {
 		return
 	}
 	log.Printf("hash after server calculation is: %s\n", hash)
+
+	// save meta data to db
+	fileMeta := meta.FileMeta{
+		FileName: b.Filename,
+		FileSha1: fileHash,
+		FileSize: b.Filesize,
+		Location: folder,
+		UploadAt: time.Now().Format("2006-01-02 15:04:05"),
+	}
+	meta.UpdateFileMetaDB(fileMeta, username.(string))
 
 	c.JSON(200, gin.H{
 		"code": 0,

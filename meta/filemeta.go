@@ -35,9 +35,11 @@ func UpdateFileMetaDB(fm FileMeta, username string) bool {
 
 	if err != nil {
 		fmt.Println(err.Error())
+		panic(err.Error())
 	}
 	if errr != nil {
 		fmt.Println(errr.Error())
+		panic(err.Error())
 	}
 	if fileSucc && userSucc {
 		return true
