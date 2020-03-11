@@ -3,6 +3,7 @@ package db
 import (
 	"GoDrive/db/mydb"
 	"database/sql"
+	"errors"
 	"fmt"
 )
 
@@ -110,6 +111,23 @@ func IsFileUploaded(filehash string) (bool, error) {
 	}
 
 	return true, nil
+}
+
+// UpdateCopies : update the number of copies of a file in the db
+func UpdateCopies(filehash string) error {
+	stmt, err := mydb.DBConn().Prepare(
+		"update tbl_file set copies=copies + 1 where sha1=?")
+	if err != nil {
+		return err
+	}
+	result, err := stmt.Exec(filehash)
+	if err != nil {
+		return err
+	}
+	if count, _ := result.RowsAffected(); count == 1 {
+		return nil
+	}
+	return errors.New("No file with this hash found in Database")
 }
 
 // GetLastNMetaList : get last n file metas by batch. param: batch size

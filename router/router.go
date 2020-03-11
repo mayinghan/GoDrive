@@ -20,7 +20,7 @@ func Router() *gin.Engine {
 
 	router.GET("/api/user/info", handler.UserInfo)
 	router.GET("/api/user/filelist", handler.UserFileList)
-
+	router.GET("/api/file/instantupload", handler.InstantUpload)
 	router.POST("/api/file/uploadchunk", handler.GetFileChunk)
 	router.POST("/api/file/checkIntegrity", handler.CheckIntegrity)
 	router.POST("/api/file/upload", handler.UploadHandler)

@@ -12,6 +12,7 @@ import (
 	"os"
 	"runtime"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -290,23 +291,43 @@ func FileDeleteHandler(c *gin.Context) {
 // InstantUpload : check if the file is already in the database by comparing the hash.
 // If so, then instant upload is triggered
 func InstantUpload(c *gin.Context) {
-	type body struct {
-		Filehash interface{} `json:"filehash"`
-	}
-
-	var b body
-	if err := c.ShouldBindJSON(&b); err != nil {
+	fileHash := c.Query("filehash")
+	fileHash = strings.TrimRight(fileHash, "\n")
+	if fileHash == "" {
 		c.JSON(200, gin.H{
 			"code": 1,
-			"msg":  "Failed to bind request data",
+			"msg":  "Empty filehash received, please wait until the file finish preprocess",
 		})
-		panic(err)
+		return
 	}
-
-	fileHash := fmt.Sprintf("%v", b.Filehash)
 	dup, err := db.IsFileUploaded(fileHash)
 	if err != nil {
-		panic(err)
+		panic(err.Error())
 	}
-	fmt.Println(dup)
+	// if the file is already uploaded before
+	if dup {
+		// update the value `copies` in the database
+		err := db.UpdateCopies(fileHash)
+		if err != nil {
+			panic(err.Error())
+		}
+		// update successfully
+		c.JSON(200, gin.H{
+			"code": 0,
+			"msg":  "Duplicate file detected",
+			"data": gin.H{
+				"shouldUpload": false,
+			},
+		})
+		return
+	}
+	// no duplicated file detected
+	c.JSON(200, gin.H{
+		"code": 0,
+		"msg":  "No dup file detected",
+		"data": gin.H{
+			"shouldUpload": true,
+		},
+	})
+
 }
