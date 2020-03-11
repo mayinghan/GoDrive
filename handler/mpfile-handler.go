@@ -126,7 +126,6 @@ func CheckIntegrity(c *gin.Context) {
 	}
 	hash := mdhash.Sum()
 
-	// panic(gin.Error{Err: errors.New("123123")})
 	if hash != fileHash {
 		c.JSON(200, gin.H{
 			"code": 1,
