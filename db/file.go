@@ -22,7 +22,7 @@ func OnFileUploadFinished(filehash string, filename string, filesize int64, file
 		/* insert ignore: if an error occured during a bacth of insertions,
 		only the one with error will fail, the rest of insertions will succeed.
 		*/
-		"insert ignore into tbl_file (`sha1`, `name`, `size`, `location`) " +
+		"insert ignore into tbl_file (`hash`, `name`, `size`, `location`) " +
 			"values (?,?,?,?)",
 	)
 
@@ -48,7 +48,7 @@ func OnFileUploadFinished(filehash string, filename string, filesize int64, file
 	if row <= 0 {
 		fmt.Printf("File with hash %s was already in DB\n", filehash)
 		// update copies value by adding one
-		updateStmt, err := mydb.DBConn().Prepare("update tbl_file set copies=copies + 1 where sha1=?")
+		updateStmt, err := mydb.DBConn().Prepare("update tbl_file set copies=copies + 1 where hash=?")
 		if err != nil {
 			fmt.Println("Update prepare stmt failed")
 			fmt.Println(err.Error())
@@ -73,7 +73,7 @@ func OnFileUploadFinished(filehash string, filename string, filesize int64, file
 func GetFileMeta(filehash string) (*TableFile, error) {
 	// using prepared statement to query from the DB
 	statement, err := mydb.DBConn().Prepare(
-		"select sha1, name, size, location from tbl_file where sha1 = ?  limit 1")
+		"select hash, name, size, location from tbl_file where hash = ?  limit 1")
 
 	if err != nil {
 		fmt.Println("Failed to prepare statement, err: " + err.Error())
@@ -96,7 +96,7 @@ func GetFileMeta(filehash string) (*TableFile, error) {
 
 // IsFileUploaded : check if the file is already uploaded
 func IsFileUploaded(filehash string) (bool, error) {
-	statement, err := mydb.DBConn().Prepare("select 1 from tbl_file where sha1=? limit 1")
+	statement, err := mydb.DBConn().Prepare("select 1 from tbl_file where hash=? limit 1")
 	if err != nil {
 		fmt.Println("Failed to prepare statement, err: " + err.Error())
 		return false, err
@@ -116,7 +116,7 @@ func IsFileUploaded(filehash string) (bool, error) {
 // UpdateCopies : update the number of copies of a file in the db
 func UpdateCopies(filehash string) error {
 	stmt, err := mydb.DBConn().Prepare(
-		"update tbl_file set copies=copies + 1 where sha1=?")
+		"update tbl_file set copies=copies + 1 where hash=?")
 	if err != nil {
 		return err
 	}
@@ -132,7 +132,7 @@ func UpdateCopies(filehash string) error {
 
 // GetLastNMetaList : get last n file metas by batch. param: batch size
 func GetLastNMetaList(batchSize int) ([]TableFile, error) {
-	statement, err := mydb.DBConn().Prepare("select sha1, location, name, size from tbl_file limit ?")
+	statement, err := mydb.DBConn().Prepare("select hash, location, name, size from tbl_file limit ?")
 	if err != nil {
 		fmt.Println("Failed to prepare statement, err: " + err.Error())
 		return nil, err
@@ -163,7 +163,7 @@ func GetLastNMetaList(batchSize int) ([]TableFile, error) {
 
 // OnFileDecrementCopies : decrements the number of copies available by users
 func OnFileDecrementCopies(numCopies int, filehash string) bool {
-	statement, err := mydb.DBConn().Prepare("update tbl_file set copies = ? where sha1 = ?")
+	statement, err := mydb.DBConn().Prepare("update tbl_file set copies = ? where hash = ?")
 	if err != nil {
 		fmt.Println("Failed to prepare statement, err: " + err.Error())
 		return false
@@ -184,7 +184,7 @@ func OnFileDecrementCopies(numCopies int, filehash string) bool {
 
 // OnFileDelete : deletes the file from the tbl_file db (when copies <= 1)
 func OnFileDelete(filehash string) bool {
-	statement, err := mydb.DBConn().Prepare("delete from tbl_file where sha1 = ?")
+	statement, err := mydb.DBConn().Prepare("delete from tbl_file where hash = ?")
 	if err != nil {
 		fmt.Println("Failed to prepare statement, err: " + err.Error())
 		return false
@@ -205,7 +205,7 @@ func OnFileDelete(filehash string) bool {
 
 // OnFileRemoved : either decrements the number of copies or deletes the file in the tbl_file db (remove success, need to delete meta?)
 func OnFileRemoved(filehash string) (bool, bool) {
-	statement, err := mydb.DBConn().Prepare("select copies from tbl_file where sha1 = ?")
+	statement, err := mydb.DBConn().Prepare("select copies from tbl_file where hash = ?")
 	if err != nil {
 		fmt.Println("Failed to prepare statement, err: " + err.Error())
 		return false, false

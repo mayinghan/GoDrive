@@ -53,8 +53,8 @@ func GetFileMeta(sha1 string) FileMeta {
 }
 
 // GetFileMetaDB : get file meta info from DB
-func GetFileMetaDB(sha1 string) (FileMeta, error) {
-	tFile, err := db.GetFileMeta(sha1)
+func GetFileMetaDB(hash string) (FileMeta, error) {
+	tFile, err := db.GetFileMeta(hash)
 	if err != nil {
 		return FileMeta{}, err
 	}
