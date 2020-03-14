@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"GoDrive/aws"
 	"GoDrive/config"
 	"GoDrive/db"
 	"GoDrive/meta"
@@ -23,6 +24,15 @@ const goos string = runtime.GOOS
 // UploadHandler handles file upload
 func UploadHandler(c *gin.Context) {
 	head, err := c.FormFile("file")
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"code":  1,
+			"msg":   "Could not receive file.",
+			"error": err.Error(),
+		})
+		return
+	}
+
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"code":  1,
@@ -58,6 +68,7 @@ func UploadHandler(c *gin.Context) {
 		})
 		return
 	}
+
 	defer newFile.Close()
 	newFileInfo, err := newFile.Stat()
 	if err != nil {
@@ -86,6 +97,18 @@ func UploadHandler(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"code":  1,
 			"msg":   "Internal Server Error: Failed to save file to the DB.",
+			"error": err.Error(),
+		})
+		return
+	}
+
+	sess := aws.Session()
+	uploadAWS, err := aws.UploadToAWS(sess, fileMeta.Location)
+
+	if !uploadAWS {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"code":  1,
+			"msg":   "Internal Server Error: Failed to save file to the AWS.",
 			"error": err.Error(),
 		})
 		return
