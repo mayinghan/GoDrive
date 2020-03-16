@@ -102,9 +102,7 @@ func UploadHandler(c *gin.Context) {
 		return
 	}
 
-	sess := aws.Session()
-	uploadAWS, err := aws.UploadToAWS(sess, fileMeta.Location)
-
+	uploadAWS, err := aws.UploadToAWS(fileMeta.Location, fileMeta.FileSha1)
 	if !uploadAWS {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"code":  1,
