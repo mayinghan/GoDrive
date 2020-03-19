@@ -10,11 +10,12 @@ Use Amazon's user guide to install AWS CLI on [Windows](https://docs.aws.amazon.
 aws configure
 ```
 Put the following:
-
+ ```
 AWS Access Key ID: AKIAISGDUVPZ4M6K7I5Q
 AWS Secret Access Key: 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
 Default region name: us-east-1
 Default output format: json
+```
 
 
 ## Step 3: Install AWS SDK for Go:
