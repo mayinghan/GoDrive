@@ -35,11 +35,11 @@ import (
 ## Step 4: Using AWS S3
 ### Uploading to AWS S3 
 #### Inputs:
-**dir** - The location of the file allows AWS S3 to read the file's content into a buffer. 
+**dir** - The location of the file allows AWS S3 to read the file's content into a buffer.  
 **hash** - The file hash acts as a key that allows AWS S3 to retrieve the file.
 
 #### Outputs: 
-**bool** - Success indicator
+**bool** - Success indicator  
 **error** - Error message
 
 ```
@@ -47,11 +47,11 @@ func UploadToAWS(dir string, hash string) (bool, error)
 ```
 ### Downloading from AWS S3
 ### Inputs:
-**fileName** - Downloads the file to the given directory 
+**fileName** - Downloads the file to the given directory  
 **hash** - The file hash acts as a key that allows AWS S3 to retrieve the file.
 
 ### Outputs:
-**bool** - Success indicator
+**bool** - Success indicator  
 **error** - Error message
 
 ```
