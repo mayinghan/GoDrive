@@ -24,22 +24,10 @@ const goos string = runtime.GOOS
 // UploadHandler handles file upload
 func UploadHandler(c *gin.Context) {
 	head, err := c.FormFile("file")
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"code":  1,
-			"msg":   "Could not receive file.",
-			"error": err.Error(),
-		})
-		return
-	}
+	clientHash := c.PostForm("filehash")
 
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"code":  1,
-			"msg":   "Could not receive file.",
-			"error": err.Error(),
-		})
-		return
+		panic(err.Error())
 	}
 
 	var basepath string = config.WholeFileStoreLocation
@@ -82,7 +70,17 @@ func UploadHandler(c *gin.Context) {
 
 	// update file meta hashmap
 	fileMeta.FileSize = newFileInfo.Size()
-	fileMeta.FileSha1 = utils.FileSHA1(newFile)
+	fileMeta.FileMD5 = utils.FileMD5(newFile)
+
+	// integrity checking
+	if fileMeta.FileMD5 != clientHash {
+		// integrity checking failed
+		c.JSON(200, gin.H{
+			"code": 1,
+			"msg":  "Server integrity check failed, please try upload again later",
+		})
+		return
+	}
 
 	// getting username
 	username, exist := c.Get("username")
@@ -94,17 +92,16 @@ func UploadHandler(c *gin.Context) {
 	uploadDB := meta.UpdateFileMetaDB(fileMeta, username.(string))
 
 	if !uploadDB {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"code":  1,
-			"msg":   "Internal Server Error: Failed to save file to the DB.",
-			"error": err.Error(),
+		c.JSON(200, gin.H{
+			"code": 1,
+			"msg":  "Internal Server Error: Failed to save metadata to the DB.",
 		})
 		return
 	}
 
-	uploadAWS, err := aws.UploadToAWS(fileMeta.Location, fileMeta.FileSha1)
+	uploadAWS, err := aws.UploadToAWS(fileMeta.Location, fileMeta.FileMD5)
 	if !uploadAWS {
-		c.JSON(http.StatusInternalServerError, gin.H{
+		c.JSON(200, gin.H{
 			"code":  1,
 			"msg":   "Internal Server Error: Failed to save file to the AWS.",
 			"error": err.Error(),
@@ -187,15 +184,8 @@ func QueryByBatchHandler(c *gin.Context) {
 
 // DownloadHandler : download file
 func DownloadHandler(c *gin.Context) {
-	var fileSha1 string
-	if err := c.ShouldBindJSON(&fileSha1); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"code": 1,
-			"msg":  err.Error(),
-		})
-		panic(err)
-	}
-	metaInfo := meta.GetFileMeta(fileSha1)
+	filehash := c.Query("filehash")
+	metaInfo := meta.GetFileMeta(filehash)
 
 	f, err := os.Open(metaInfo.Location)
 	if err != nil {

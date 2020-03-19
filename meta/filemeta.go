@@ -8,7 +8,7 @@ import (
 
 // FileMeta contains file meta info struct
 type FileMeta struct {
-	FileSha1 string `json:"hashkey"`
+	FileMD5  string `json:"hashkey"`
 	FileName string `json:"name"`
 	FileSize int64  `json:"size"`
 	Location string `json:"location"`
@@ -24,14 +24,14 @@ func init() {
 
 // UpdateFileMeta : add/modify file meta info in RAM
 func UpdateFileMeta(fm FileMeta) {
-	fileMetas[fm.FileSha1] = fm
+	fileMetas[fm.FileMD5] = fm
 }
 
 // UpdateFileMetaDB : add/modify file meta into tbl_file and tbl_userfile DBs
 func UpdateFileMetaDB(fm FileMeta, username string) bool {
 
-	fileSucc, err := db.OnFileUploadFinished(fm.FileSha1, fm.FileName, fm.FileSize, fm.Location)
-	userSucc, errr := db.OnFileUploadUser(username, fm.FileSha1, fm.FileSize, fm.FileName)
+	fileSucc, err := db.OnFileUploadFinished(fm.FileMD5, fm.FileName, fm.FileSize, fm.Location)
+	userSucc, errr := db.OnFileUploadUser(username, fm.FileMD5, fm.FileSize, fm.FileName)
 
 	if err != nil {
 		fmt.Println(err.Error())
@@ -60,7 +60,7 @@ func GetFileMetaDB(hash string) (FileMeta, error) {
 	}
 
 	fMeta := FileMeta{
-		FileSha1: tFile.FileHash,
+		FileMD5:  tFile.FileHash,
 		FileName: tFile.FileName.String,
 		FileSize: tFile.FileSize.Int64,
 		Location: tFile.FileLocation.String,
@@ -91,7 +91,7 @@ func GetLastFileMetasDB(limit int) ([]FileMeta, error) {
 	fMetas := make([]FileMeta, len(files))
 	for i := 0; i < len(fMetas); i++ {
 		fMetas[i] = FileMeta{
-			FileSha1: files[i].FileHash,
+			FileMD5:  files[i].FileHash,
 			FileName: files[i].FileName.String,
 			FileSize: files[i].FileSize.Int64,
 			Location: files[i].FileLocation.String,
@@ -102,8 +102,8 @@ func GetLastFileMetasDB(limit int) ([]FileMeta, error) {
 }
 
 // RemoveMeta : remove the file meta, in the future, need to consider about multithreading security
-func RemoveMeta(fileSha1 string) {
-	delete(fileMetas, fileSha1)
+func RemoveMeta(FileMD5 string) {
+	delete(fileMetas, FileMD5)
 }
 
 // RemoveMetaDB removes a file meta from the db (remove success, delete meta)

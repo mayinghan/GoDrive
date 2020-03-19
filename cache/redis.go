@@ -9,9 +9,11 @@ import (
 
 var (
 	emailVeriPool *redis.Pool
+	chunkPool     *redis.Pool
 	redisHost     = "127.0.0.1:6379"
 	redisPass     = "123456"
 	emailVeriDB   = 0
+	fileChunkDB   = 1
 )
 
 func createPool(dbtype int) *redis.Pool {
@@ -53,9 +55,15 @@ func createPool(dbtype int) *redis.Pool {
 
 func init() {
 	emailVeriPool = createPool(emailVeriDB)
+	chunkPool = createPool(fileChunkDB)
 }
 
 // EmailVeriPool returns the redis pool for email verification
 func EmailVeriPool() *redis.Pool {
 	return emailVeriPool
+}
+
+// ChunkPool returns the redis pool for file chunks
+func ChunkPool() *redis.Pool {
+	return chunkPool
 }

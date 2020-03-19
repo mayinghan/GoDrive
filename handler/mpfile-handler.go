@@ -19,7 +19,90 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// GetFileChunk receives the file chunks
+func exist(dir string) bool {
+	_, err := os.Stat(dir) //os.Stat获取文件信息
+	if err != nil {
+		if os.IsExist(err) {
+			return true
+		}
+		return false
+	}
+	return true
+}
+
+func getFileDir(filehash string) string {
+	chunkRootPath := config.ChunkFileStoreDirectory
+	dir := chunkRootPath + filehash + "/"
+
+	return dir
+}
+
+// return true and the current index list if the file exist in tmp local, false if not
+func getLocalChunks(filehash string) (bool, []int) {
+	dir := getFileDir(filehash)
+	if ex := exist(dir); !ex {
+		return false, make([]int, 0)
+	}
+
+	files, err := ioutil.ReadDir(dir)
+	if err != nil {
+		panic(err)
+	}
+
+	var indexList []int
+	for _, f := range files {
+		idx, _ := strconv.Atoi(strings.Split(f.Name(), "_")[1])
+		log.Println(idx)
+		indexList = append(indexList, idx)
+	}
+
+	log.Printf("%v\n", indexList)
+	return true, indexList
+}
+
+// GetPrevChunks : init before the actual upload
+func GetPrevChunks(c *gin.Context) {
+	username, exist := c.Get("username")
+	if !exist {
+		fmt.Println("Get username from context failed")
+		c.JSON(200, gin.H{
+			"code": 1,
+			"msg":  "Auth failed",
+		})
+		return
+	}
+
+	filehash := c.Query("filehash")
+
+	log.Println(username)
+
+	dirExist, uploadedIdxList := getLocalChunks(filehash)
+	// Case 1: no previous chunks
+	if !dirExist {
+		os.MkdirAll(getFileDir(filehash), 0744)
+		c.JSON(200, gin.H{
+			"code": 0,
+			"msg":  "No current chunks",
+			"data": gin.H{
+				"uploadedList": uploadedIdxList,
+			},
+		})
+		return
+	}
+
+	// Case 2: have current chunk
+	c.JSON(200, gin.H{
+		"code": 0,
+		"msg":  "Previous chunks detected",
+		"data": gin.H{
+			"uploadedList": uploadedIdxList,
+		},
+	})
+
+	return
+}
+
+// GetFileChunk receives the file chunk
 func GetFileChunk(c *gin.Context) {
 	username, exist := c.Get("username")
 	if !exist {
@@ -53,11 +136,15 @@ func GetFileChunk(c *gin.Context) {
 		return
 	}
 
-	chunkRootPath := config.ChunkFileStoreDirectory
-	log.Printf("filename : %s\nuploadId: %s\n", filename, uploadID)
-	tempPath := chunkRootPath + filehash + "/" + chunkID
-	os.MkdirAll(path.Dir(tempPath), 0744)
+	// rConn := cache.ChunkPool().Get()
+	// defer rConn.Close()
 
+	// // save the current filechunk to redis
+	// rConn.Do("HSET", "MP_"+uploadID, chunkID)
+
+	log.Printf("filename : %s\nuploadId: %s, chunkid: %s\n", filename, uploadID, chunkID)
+
+	tempPath := path.Join(getFileDir(filehash), chunkID)
 	if err := c.SaveUploadedFile(chunk, tempPath); err != nil {
 		c.String(http.StatusBadRequest, "failed to save chunk")
 		return
@@ -103,8 +190,7 @@ func CheckIntegrity(c *gin.Context) {
 
 		return nil
 	})
-	fmt.Println(counter)
-	fmt.Println(b.ChunkLength)
+
 	// missing chunks
 	if counter != b.ChunkLength {
 		c.JSON(200, gin.H{
@@ -143,7 +229,7 @@ func CheckIntegrity(c *gin.Context) {
 	// save meta data to db
 	fileMeta := meta.FileMeta{
 		FileName: b.Filename,
-		FileSha1: fileHash,
+		FileMD5:  fileHash,
 		FileSize: b.Filesize,
 		Location: folder,
 		UploadAt: time.Now().Format("2006-01-02 15:04:05"),
