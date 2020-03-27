@@ -6,10 +6,18 @@ import (
 	"fmt"
 )
 
-// UserFile : a struct that correspond to a file's info in the database
-type UserFile struct {
+// UserFileDB : a struct that correspond to a file's info in the database
+type UserFileDB struct {
+	FileHash sql.NullString
 	FileName sql.NullString
 	FileSize sql.NullInt64
+}
+
+// UserFile : a struct that convert the DB model to regular Golang type model (NullStrig -> String)
+type UserFile struct {
+	FileHash string `json:"key"`
+	FileName string `json:"filename"`
+	FileSize int    `json:"filesize"`
 }
 
 // OnFileUploadUser returns a bool after the file is uploaded to tbl_userfile db
@@ -71,8 +79,8 @@ func OnFileRemoveUser(username string, filehash string) (bool, error) {
 }
 
 // GetAllUserFiles : Returns all files uploaded by user 'username'
-func GetAllUserFiles(user string) (bool, []UserFile, error) {
-	statement, err := mydb.DBConn().Prepare("select filename, size from tbl_userfile where username = ?")
+func GetAllUserFiles(user string) (bool, []*UserFile, error) {
+	statement, err := mydb.DBConn().Prepare("select hash, filename, size from tbl_userfile where username = ?")
 	if err != nil {
 		fmt.Println("Failed to prepare statement, err: " + err.Error())
 		return false, nil, err
@@ -85,13 +93,24 @@ func GetAllUserFiles(user string) (bool, []UserFile, error) {
 		return false, nil, err
 	}
 
-	var files []UserFile
+	var files []*UserFile
 	for rows.Next() {
-		file := UserFile{}
-		err = rows.Scan(&file.FileName, &file.FileSize)
+		fileDB := UserFileDB{}
+		err = rows.Scan(&fileDB.FileHash, &fileDB.FileName, &fileDB.FileSize)
 		if err != nil {
 			fmt.Println(err.Error())
-			break
+			panic(err.Error())
+		}
+
+		file := &UserFile{}
+		if fileDB.FileHash.Valid {
+			file.FileHash = fileDB.FileHash.String
+		}
+		if fileDB.FileName.Valid {
+			file.FileName = fileDB.FileName.String
+		}
+		if fileDB.FileSize.Valid {
+			file.FileSize = int(fileDB.FileSize.Int64)
 		}
 		files = append(files, file)
 	}

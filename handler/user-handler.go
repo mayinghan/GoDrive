@@ -242,14 +242,14 @@ func UserInfo(c *gin.Context) {
 //UserFileList returns list of all files by user
 func UserFileList(c *gin.Context) {
 	//get username
-	username, exist := c.Get("username")
-	if !exist {
-		fmt.Printf("username: %s\n", username)
-		c.JSON(http.StatusBadRequest, gin.H{
-			"code": 1,
-			"msg":  "no user exists with that username",
-		})
-	}
+	username, _ := c.Get("username")
+	// if !exist {
+	// 	fmt.Printf("username: %s\n", username)
+	// 	c.JSON(http.StatusBadRequest, gin.H{
+	// 		"code": 1,
+	// 		"msg":  "no user exists with that username",
+	// 	})
+	// }
 
 	succ, files, err := db.GetAllUserFiles(username.(string))
 	if err != nil {
