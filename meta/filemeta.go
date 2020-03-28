@@ -13,6 +13,7 @@ type FileMeta struct {
 	FileSize int64  `json:"size"`
 	Location string `json:"location"`
 	UploadAt string `json:"date"`
+	IsSmall  bool   `json:"small"`
 }
 
 var fileMetas map[string]FileMeta
@@ -30,7 +31,7 @@ func UpdateFileMeta(fm FileMeta) {
 // UpdateFileMetaDB : add/modify file meta into tbl_file and tbl_userfile DBs
 func UpdateFileMetaDB(fm FileMeta, username string) bool {
 
-	fileSucc, err := db.OnFileUploadFinished(fm.FileMD5, fm.FileName, fm.FileSize, fm.Location)
+	fileSucc, err := db.OnFileUploadFinished(fm.FileMD5, fm.FileName, fm.FileSize, fm.Location, fm.IsSmall)
 	userSucc, errr := db.OnFileUploadUser(username, fm.FileMD5, fm.FileSize, fm.FileName)
 
 	if err != nil {

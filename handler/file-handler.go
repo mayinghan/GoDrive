@@ -35,6 +35,7 @@ func UploadHandler(c *gin.Context) {
 		FileName: head.Filename,
 		Location: basepath + head.Filename,
 		UploadAt: time.Now().Format("2006-01-02 15:04:05"),
+		IsSmall:  true,
 	}
 
 	err = c.SaveUploadedFile(head, fileMeta.Location)

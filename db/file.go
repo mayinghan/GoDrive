@@ -16,14 +16,14 @@ type TableFile struct {
 }
 
 // OnFileUploadFinished returns a bool after the file is uploaded to db
-func OnFileUploadFinished(filehash string, filename string, filesize int64, filelocation string) (bool, error) {
+func OnFileUploadFinished(filehash string, filename string, filesize int64, filelocation string, isSmall bool) (bool, error) {
 	// using prepared statement to prevent
 	statement, err := mydb.DBConn().Prepare(
 		/* insert ignore: if an error occured during a bacth of insertions,
 		only the one with error will fail, the rest of insertions will succeed.
 		*/
-		"insert ignore into tbl_file (`hash`, `name`, `size`, `location`) " +
-			"values (?,?,?,?)",
+		"insert ignore into tbl_file (`hash`, `name`, `size`, `location`, `is_small`) " +
+			"values (?,?,?,?,?)",
 	)
 
 	if err != nil {
@@ -33,7 +33,7 @@ func OnFileUploadFinished(filehash string, filename string, filesize int64, file
 
 	defer statement.Close()
 
-	result, err := statement.Exec(filehash, filename, filesize, filelocation)
+	result, err := statement.Exec(filehash, filename, filesize, filelocation, isSmall)
 	if err != nil {
 		fmt.Println(err.Error())
 		return false, err
