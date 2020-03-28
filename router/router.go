@@ -29,7 +29,7 @@ func Router() *gin.Engine {
 	router.GET("/api/file/prevChunks", handler.GetPrevChunks)
 	router.GET("/api/file/download", handler.DownloadHandler)
 	router.POST("/api/file/update", handler.FileUpdateHandler)
-	router.DELETE("/api/file/delete", handler.FileDeleteHandler)
+	router.DELETE("/api/user/file", handler.FileDeleteHandler)
 
 	return router
 }

@@ -8,6 +8,7 @@ import (
 	"os"
 
 	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/aws/aws-sdk-go/service/s3/s3manager"
 )
@@ -21,7 +22,7 @@ func DownloadFromAWS(hash string, fileName string) (bool, error) {
 	}
 	defer file.Close()
 
-	sess := Session()
+	sess := GetSession()
 	downloader := s3manager.NewDownloader(sess)
 
 	fileBytes, err := downloader.Download(file, &s3.GetObjectInput{
@@ -37,7 +38,7 @@ func DownloadFromAWS(hash string, fileName string) (bool, error) {
 
 //UploadToAWS uploads file to aws
 func UploadToAWS(dir string, hash string) (bool, error) {
-	sess := Session()
+	sess := GetSession()
 	file, err := os.Open(dir)
 	if err != nil {
 		return false, err
@@ -65,4 +66,30 @@ func UploadToAWS(dir string, hash string) (bool, error) {
 		ServerSideEncryption: aws.String("AES256"),
 	})
 	return true, nil
+}
+
+// InitAWSMpUpload : init multipart uploading to S3
+func InitAWSMpUpload(filehash string) string {
+	sess := GetSession()
+	svc := s3.New(sess)
+	input := &s3.CreateMultipartUploadInput{
+		Bucket:            aws.String(AWSS3Bucket),
+		Key:               aws.String(filehash),
+		SSECustomerKeyMD5: aws.String(filehash),
+	}
+
+	result, err := svc.CreateMultipartUpload(input)
+	if err != nil {
+		if aerr, ok := err.(awserr.Error); ok {
+			switch aerr.Code() {
+			default:
+				fmt.Println(aerr.Error())
+				panic(aerr.Error())
+			}
+		} else {
+			panic(err.Error())
+		}
+	}
+
+	return aws.StringValue(result.UploadId)
 }

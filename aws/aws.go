@@ -30,7 +30,7 @@ func init() {
 	sess = awss
 }
 
-//Session returns a aws s3 session
-func Session() *session.Session {
+//GetSession returns a aws s3 session
+func GetSession() *session.Session {
 	return sess
 }

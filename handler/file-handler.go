@@ -227,7 +227,7 @@ func FileUpdateHandler(c *gin.Context) {
 	}
 	c.Request.ParseForm()
 	operationType := c.Request.Form.Get("op") // for future use: expand operation type to not only renaming file
-	fileSha1 := c.Request.Form.Get("filehash")
+	filehash := c.Request.Form.Get("filehash")
 	newFileName := c.Request.Form.Get("filename")
 
 	if operationType != "update-name" {
@@ -238,7 +238,7 @@ func FileUpdateHandler(c *gin.Context) {
 		return
 	}
 
-	currFileMeta := meta.GetFileMeta(fileSha1)
+	currFileMeta := meta.GetFileMeta(filehash)
 	currFileMeta.FileName = newFileName
 	meta.UpdateFileMeta(currFileMeta)
 
@@ -256,15 +256,8 @@ func FileUpdateHandler(c *gin.Context) {
 
 // FileDeleteHandler : delete the file (soft-delete by using a flag)
 func FileDeleteHandler(c *gin.Context) {
-	var fileSha1 string
-	if err := c.ShouldBindJSON(&fileSha1); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"code": 1,
-			"msg":  err.Error(),
-		})
-		panic(err)
-	}
-	fileMeta, err := meta.GetFileMetaDB(fileSha1)
+	var filehash string = c.Query("filehash")
+	fileMeta, err := meta.GetFileMetaDB(filehash)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"code":  1,
@@ -280,7 +273,7 @@ func FileDeleteHandler(c *gin.Context) {
 		fmt.Printf("Failed to find username.")
 	}
 
-	removeFromDB, delFile := meta.RemoveMetaDB(username.(string), fileSha1)
+	removeFromDB, delFile := meta.RemoveMetaDB(username.(string), filehash)
 	if !removeFromDB {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"code": 1,
@@ -289,7 +282,7 @@ func FileDeleteHandler(c *gin.Context) {
 		return
 	}
 	if delFile {
-		meta.RemoveMeta(fileSha1)
+		meta.RemoveMeta(filehash)
 	}
 	os.Remove(fileMeta.Location)
 	c.JSON(http.StatusOK, gin.H{
