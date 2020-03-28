@@ -10,6 +10,7 @@ CREATE TABLE `tbl_file`
   `update_at` datetime DEFAULT NOW() COMMENT 'update date',
   `copies` int NOT NULL DEFAULT 1 COMMENT 'copies',
   `ext1` text COMMENT 'backup info, not neccessarilly gonna be used',
+  `is_small` boolean NOT NULL COMMENT 'file is small',
   PRIMARY KEY (`id`),
   UNIQUE KEY `idx_file_hash` (`hash`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
@@ -21,3 +22,7 @@ CREATE TABLE `tbl_file`
 
 -- ALTER TABLE tbl_file
 -- DROP status;
+
+
+-- ALTER TABLE tbl_file
+-- ADD is_small boolean NOT NULL COMMENT 'file is small';
