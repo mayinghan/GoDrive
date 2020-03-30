@@ -10,8 +10,8 @@ import (
 
 //aws configs
 const (
-	AWSS3Region = "us-east-1"
-	AWSS3Bucket = "godrive-bucket"
+	AWSS3Region string = "us-east-1"
+	AWSS3Bucket string = "godrive-bucket"
 )
 
 var sess *session.Session

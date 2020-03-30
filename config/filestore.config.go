@@ -15,6 +15,9 @@ var ChunkFileStoreDirectory string
 // DataSourceName is the path for database
 var DataSourceName string
 
+// StoreMethod : either "AWS" or "Local"
+var StoreMethod string = "AWS"
+
 func init() {
 	if goos == "darwin" {
 		WholeFileStoreLocation = "/tmp/"

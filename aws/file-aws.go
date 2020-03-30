@@ -4,6 +4,7 @@ import (
 	"GoDrive/config"
 	"bytes"
 	"fmt"
+	"io"
 	"net/http"
 	"os"
 
@@ -73,9 +74,8 @@ func InitAWSMpUpload(filehash string) string {
 	sess := GetSession()
 	svc := s3.New(sess)
 	input := &s3.CreateMultipartUploadInput{
-		Bucket:            aws.String(AWSS3Bucket),
-		Key:               aws.String(filehash),
-		SSECustomerKeyMD5: aws.String(filehash),
+		Bucket: aws.String(AWSS3Bucket),
+		Key:    aws.String(filehash),
 	}
 
 	result, err := svc.CreateMultipartUpload(input)
@@ -92,4 +92,112 @@ func InitAWSMpUpload(filehash string) string {
 	}
 
 	return aws.StringValue(result.UploadId)
+}
+
+// UploadChunkToAws : upload file chunks to AWS
+func UploadChunkToAws(content io.Reader, filehash string, idx int64, uploadId string) {
+	sess := GetSession()
+	svc := s3.New(sess)
+	input := &s3.UploadPartInput{
+		Body:       aws.ReadSeekCloser(content),
+		Bucket:     aws.String(AWSS3Bucket),
+		Key:        aws.String(filehash),
+		PartNumber: aws.Int64(idx),
+		UploadId:   aws.String(uploadId),
+	}
+
+	_, err := svc.UploadPart(input)
+	if err != nil {
+		if aerr, ok := err.(awserr.Error); ok {
+			switch aerr.Code() {
+			default:
+				panic(aerr.Error())
+			}
+		} else {
+			panic(err.Error())
+		}
+	}
+}
+
+// CompleteAWSPartUpload : complete the upload
+func CompleteAWSPartUpload(filehash string, uploadId string) {
+	sess := GetSession()
+	svc := s3.New(sess)
+	listInput := &s3.ListPartsInput{
+		Bucket:   aws.String(AWSS3Bucket),
+		Key:      aws.String(filehash),
+		UploadId: aws.String(uploadId),
+	}
+
+	listResult, err := svc.ListParts(listInput)
+	if err != nil {
+		if aerr, ok := err.(awserr.Error); ok {
+			switch aerr.Code() {
+			default:
+				panic(aerr.Error())
+			}
+		} else {
+			panic(err.Error())
+		}
+	}
+	parts := listResult.Parts
+	var completeParts []*s3.CompletedPart
+	for _, p := range parts {
+		completeParts = append(completeParts, &s3.CompletedPart{
+			ETag:       p.ETag,
+			PartNumber: p.PartNumber,
+		})
+	}
+	input := &s3.CompleteMultipartUploadInput{
+		Bucket:   aws.String(AWSS3Bucket),
+		Key:      &filehash,
+		UploadId: &uploadId,
+		MultipartUpload: &s3.CompletedMultipartUpload{
+			Parts: completeParts,
+		},
+	}
+
+	result, err := svc.CompleteMultipartUpload(input)
+	if err != nil {
+		if aerr, ok := err.(awserr.Error); ok {
+			switch aerr.Code() {
+			default:
+				panic(aerr.Error())
+			}
+		} else {
+			panic(err.Error())
+		}
+	}
+
+	fmt.Printf("%v\n", result)
+}
+
+// GetPartList : get the part list
+func GetPartList(filehash string, uploadId string) []int {
+	sess := GetSession()
+	svc := s3.New(sess)
+	input := &s3.ListPartsInput{
+		Bucket:   aws.String(AWSS3Bucket),
+		Key:      aws.String(filehash),
+		UploadId: aws.String(uploadId),
+	}
+
+	result, err := svc.ListParts(input)
+	if err != nil {
+		if aerr, ok := err.(awserr.Error); ok {
+			switch aerr.Code() {
+			default:
+				panic(aerr.Error())
+			}
+		} else {
+			panic(err.Error())
+		}
+	}
+
+	var idxList []int
+	for _, part := range result.Parts {
+		idxList = append(idxList, int(*part.PartNumber))
+	}
+
+	return idxList
 }
