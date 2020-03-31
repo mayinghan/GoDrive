@@ -83,7 +83,7 @@ func GetPrevChunks(c *gin.Context) {
 		return
 	}
 	filehash := c.Query("filehash")
-
+	fileName := c.Query("filename")
 	log.Println(username)
 
 	if config.StoreMethod == "AWS" {
@@ -93,7 +93,7 @@ func GetPrevChunks(c *gin.Context) {
 		if err != nil {
 			if err == redis.ErrNil {
 				// no uploadId yet, init the upload process
-				newUploadId := aws.InitAWSMpUpload(filehash)
+				newUploadId := aws.InitAWSMpUpload(filehash, fileName)
 				// set the AWS uploadId to redis
 				rConn.Do("HSET", "aws", filehash, newUploadId)
 				c.JSON(200, gin.H{
@@ -260,7 +260,7 @@ func CheckIntegrity(c *gin.Context) {
 			FileName: b.Filename,
 			FileMD5:  fileHash,
 			FileSize: b.Filesize,
-			Location: "AWS",
+			Location: "aws",
 			UploadAt: time.Now().Format("2006-01-02 15:04:05"),
 			IsSmall:  false,
 		}

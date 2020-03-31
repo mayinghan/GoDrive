@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
@@ -23,7 +24,6 @@ func DownloadFromAWS(hash string, fileName string) (bool, error) {
 	}
 	defer file.Close()
 
-	sess := GetSession()
 	downloader := s3manager.NewDownloader(sess)
 
 	fileBytes, err := downloader.Download(file, &s3.GetObjectInput{
@@ -38,8 +38,7 @@ func DownloadFromAWS(hash string, fileName string) (bool, error) {
 }
 
 //UploadToAWS uploads file to aws
-func UploadToAWS(dir string, hash string) (bool, error) {
-	sess := GetSession()
+func UploadToAWS(dir string, hash string, filename string) (bool, error) {
 	file, err := os.Open(dir)
 	if err != nil {
 		return false, err
@@ -63,19 +62,20 @@ func UploadToAWS(dir string, hash string) (bool, error) {
 		Body:                 bytes.NewReader(buffer),
 		ContentLength:        aws.Int64(size),
 		ContentType:          aws.String(http.DetectContentType(buffer)),
-		ContentDisposition:   aws.String("attachment"),
+		ContentDisposition:   aws.String("attachment;filename=\"" + filename + "\""),
 		ServerSideEncryption: aws.String("AES256"),
 	})
 	return true, nil
 }
 
 // InitAWSMpUpload : init multipart uploading to S3
-func InitAWSMpUpload(filehash string) string {
-	sess := GetSession()
-	svc := s3.New(sess)
+func InitAWSMpUpload(filehash string, filename string) string {
+	// sess := GetSession()
+	// svc := s3.New(sess)
 	input := &s3.CreateMultipartUploadInput{
-		Bucket: aws.String(AWSS3Bucket),
-		Key:    aws.String(filehash),
+		Bucket:             aws.String(AWSS3Bucket),
+		Key:                aws.String(filehash),
+		ContentDisposition: aws.String("attachment;filename=\"" + filename + "\""),
 	}
 
 	result, err := svc.CreateMultipartUpload(input)
@@ -96,8 +96,8 @@ func InitAWSMpUpload(filehash string) string {
 
 // UploadChunkToAws : upload file chunks to AWS
 func UploadChunkToAws(content io.Reader, filehash string, idx int64, uploadId string) {
-	sess := GetSession()
-	svc := s3.New(sess)
+	// sess := GetSession()
+	// svc := s3.New(sess)
 	input := &s3.UploadPartInput{
 		Body:       aws.ReadSeekCloser(content),
 		Bucket:     aws.String(AWSS3Bucket),
@@ -121,8 +121,8 @@ func UploadChunkToAws(content io.Reader, filehash string, idx int64, uploadId st
 
 // CompleteAWSPartUpload : complete the upload
 func CompleteAWSPartUpload(filehash string, uploadId string) {
-	sess := GetSession()
-	svc := s3.New(sess)
+	// sess := GetSession()
+	// svc := s3.New(sess)
 	listInput := &s3.ListPartsInput{
 		Bucket:   aws.String(AWSS3Bucket),
 		Key:      aws.String(filehash),
@@ -174,8 +174,8 @@ func CompleteAWSPartUpload(filehash string, uploadId string) {
 
 // GetPartList : get the part list
 func GetPartList(filehash string, uploadId string) []int {
-	sess := GetSession()
-	svc := s3.New(sess)
+	// sess := GetSession()
+	// svc := s3.New(sess)
 	input := &s3.ListPartsInput{
 		Bucket:   aws.String(AWSS3Bucket),
 		Key:      aws.String(filehash),
@@ -200,4 +200,21 @@ func GetPartList(filehash string, uploadId string) []int {
 	}
 
 	return idxList
+}
+
+// GetDownloadURL : get a temporary download signed url by S3
+func GetDownloadURL(filehash string) string {
+	// sess := GetSession()
+	// svc := s3.New(sess)
+	req, _ := svc.GetObjectRequest(&s3.GetObjectInput{
+		Bucket: aws.String(AWSS3Bucket),
+		Key:    aws.String(filehash),
+	})
+	urlStr, err := req.Presign(24 * time.Hour)
+
+	if err != nil {
+		panic(err)
+	}
+
+	return urlStr
 }

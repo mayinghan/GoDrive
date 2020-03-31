@@ -12,6 +12,7 @@ func Router() *gin.Engine {
 	router := gin.Default()
 	// APIs that don't need auth
 	router.Use(middleware.ErrHandler())
+	router.Use(middleware.CORSMiddleware())
 	router.POST("/api/user/signup", handler.RegisterHandler)
 	router.GET("/api/user/verify", handler.SendVerifyEmailHandler)
 	router.POST("/api/user/login", handler.LoginHandler)
@@ -28,6 +29,7 @@ func Router() *gin.Engine {
 	router.GET("/api/file/querybatch", handler.QueryByBatchHandler)
 	router.GET("/api/file/prevChunks", handler.GetPrevChunks)
 	router.GET("/api/file/download", handler.DownloadHandler)
+	router.GET("/api/file/url", handler.GetDownloadURL)
 	router.POST("/api/file/update", handler.FileUpdateHandler)
 	router.DELETE("/api/user/file", handler.FileDeleteHandler)
 

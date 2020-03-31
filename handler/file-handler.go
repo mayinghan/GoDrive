@@ -100,7 +100,7 @@ func UploadHandler(c *gin.Context) {
 		return
 	}
 
-	uploadAWS, err := aws.UploadToAWS(fileMeta.Location, fileMeta.FileMD5)
+	uploadAWS, err := aws.UploadToAWS(fileMeta.Location, fileMeta.FileMD5, fileMeta.FileName)
 	if !uploadAWS {
 		c.JSON(200, gin.H{
 			"code":  1,
@@ -186,7 +186,10 @@ func QueryByBatchHandler(c *gin.Context) {
 // DownloadHandler : download file
 func DownloadHandler(c *gin.Context) {
 	filehash := c.Query("filehash")
-	metaInfo := meta.GetFileMeta(filehash)
+	metaInfo, err := meta.GetFileMetaDB(filehash)
+	if err != nil {
+		panic(err.Error())
+	}
 
 	f, err := os.Open(metaInfo.Location)
 	if err != nil {
@@ -334,5 +337,22 @@ func InstantUpload(c *gin.Context) {
 			"shouldUpload": true,
 		},
 	})
+}
 
+// GetDownloadURL : get the file download url
+func GetDownloadURL(c *gin.Context) {
+	filehash := c.Query("filehash")
+	metaInfo, err := meta.GetFileMetaDB(filehash)
+	if err != nil {
+		panic(err.Error())
+	}
+
+	if metaInfo.Location == "aws" {
+		signedURL := aws.GetDownloadURL(filehash)
+		c.Data(200, "octet-stream", []byte(signedURL))
+	} else {
+		tmpURL := fmt.Sprintf("http://%s/api/file/download?filehash=%s",
+			c.Request.Host, filehash)
+		c.Data(200, "octet-steam", []byte(tmpURL))
+	}
 }

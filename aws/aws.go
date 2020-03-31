@@ -6,6 +6,7 @@ import (
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go/service/s3"
 )
 
 //aws configs
@@ -15,6 +16,7 @@ const (
 )
 
 var sess *session.Session
+var svc *s3.S3
 
 func init() {
 	awss, err := session.NewSession(
@@ -28,9 +30,10 @@ func init() {
 		os.Exit(1)
 	}
 	sess = awss
+	svc = s3.New(sess)
 }
 
-//GetSession returns a aws s3 session
-func GetSession() *session.Session {
-	return sess
-}
+// //GetSession returns a aws s3 session
+// func GetSession() *session.Session {
+// 	return sess
+// }
