@@ -314,19 +314,36 @@ func InstantUpload(c *gin.Context) {
 	}
 	// if the file is already uploaded before
 	if dup {
-		// update the value `copies` in the database
-		err := db.UpdateCopies(fileHash)
-		if err != nil {
-			panic(err.Error())
+		username, exist := c.Get("username")
+		if !exist {
+			fmt.Printf("Failed to find username.")
 		}
-		// update successfully
-		c.JSON(200, gin.H{
-			"code": 0,
-			"msg":  "Duplicate file detected",
-			"data": gin.H{
-				"shouldUpload": false,
-			},
-		})
+
+		notDupUserFile := db.CheckForDupe(username.(string), fileHash)
+		if notDupUserFile {
+			// update the value `copies` in the database
+			err := db.UpdateCopies(fileHash)
+			if err != nil {
+				panic(err.Error())
+			}
+			// update successfully
+			c.JSON(200, gin.H{
+				"code": 0,
+				"msg":  "Duplicate file detected",
+				"data": gin.H{
+					"shouldUpload": false,
+				},
+			})
+		} else {
+			// update successfully without incrementing copies
+			c.JSON(200, gin.H{
+				"code": 0,
+				"msg":  "Duplicate file detected",
+				"data": gin.H{
+					"shouldUpload": false,
+				},
+			})
+		}
 		return
 	}
 	// no duplicated file detected

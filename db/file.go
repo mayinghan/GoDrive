@@ -47,23 +47,16 @@ func OnFileUploadFinished(filehash string, filename string, filesize int64, file
 	}
 	if row <= 0 {
 		fmt.Printf("File with hash %s was already in DB\n", filehash)
+
 		// update copies value by adding one
-		updateStmt, err := mydb.DBConn().Prepare("update tbl_file set copies=copies + 1 where hash=?")
-		if err != nil {
-			fmt.Println("Update prepare stmt failed")
-			fmt.Println(err.Error())
-			return false, err
-		}
-		result, err := updateStmt.Exec(filehash)
+		err = UpdateCopies(filehash)
 		if err != nil {
 			fmt.Println(err.Error())
 			return false, err
-		}
-		if count, _ := result.RowsAffected(); count == 1 {
-			fmt.Println("One record updated")
+
+		} else {
 			return true, nil
 		}
-		return false, nil
 	}
 
 	return true, nil

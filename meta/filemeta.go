@@ -30,20 +30,23 @@ func UpdateFileMeta(fm FileMeta) {
 
 // UpdateFileMetaDB : add/modify file meta into tbl_file and tbl_userfile DBs
 func UpdateFileMetaDB(fm FileMeta, username string) bool {
+	addToUserFileDB, err := db.OnFileUploadUser(username, fm.FileMD5, fm.FileSize, fm.FileName)
+	if addToUserFileDB {
+		fmt.Println("successfully added to tbl_userfile")
+		// tbl_userfile does not contain the hash, add tuple in tbl_file
+		if err == nil {
+			addToFileDB, err := db.OnFileUploadFinished(fm.FileMD5, fm.FileName, fm.FileSize, fm.Location, fm.IsSmall)
+			if addToFileDB {
+				return true
+			}
+			fmt.Println(err.Error())
+			return false
 
-	fileSucc, err := db.OnFileUploadFinished(fm.FileMD5, fm.FileName, fm.FileSize, fm.Location, fm.IsSmall)
-	userSucc, errr := db.OnFileUploadUser(username, fm.FileMD5, fm.FileSize, fm.FileName)
+		} else {
+			//tbl_userfile contains hash already, no need to increment copies
+			return true
+		}
 
-	if err != nil {
-		fmt.Println(err.Error())
-		panic(err.Error())
-	}
-	if errr != nil {
-		fmt.Println(errr.Error())
-		panic(err.Error())
-	}
-	if fileSucc && userSucc {
-		return true
 	}
 	return false
 }
