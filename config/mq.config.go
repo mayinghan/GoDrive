@@ -1,6 +1,6 @@
 package config
 
-const (
+var (
 	// AsyncTransferEnable : whether enable mq when uploading to aws s3
 	AsyncTransferEnable = true
 	// RabbitURL : rabbitmq url
