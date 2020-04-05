@@ -18,7 +18,6 @@ func startConsume(queueName, consumerName string, callback func(msg []byte) bool
 		panic(err)
 	}
 	// 2. looping the channel to get info
-
 	done = make(chan bool)
 	go func() {
 		for d := range msgs {
@@ -32,4 +31,9 @@ func startConsume(queueName, consumerName string, callback func(msg []byte) bool
 	<-done
 
 	channel.Close()
+}
+
+// StopConsume : stop listening to the queue
+func StopConsume() {
+	done <- true
 }
