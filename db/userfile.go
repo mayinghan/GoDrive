@@ -79,24 +79,24 @@ func OnFileRemoveUser(username string, filehash string) (bool, error) {
 	return true, nil
 }
 
-// CheckForDupe returns true if user does not have file hash in table
-func CheckForDupe(user string, filehash string) bool {
+// CheckDuplicateFile searches tbl_userfile for existing hash.
+func CheckDuplicateFile(user string, filehash string) (bool, error) {
 	var hash string
 	statement, err := mydb.DBConn().Prepare("select hash from tbl_userfile where username = ? and hash = ?")
 	if err != nil {
 		fmt.Println("Failed to prepare statement, err: " + err.Error())
-		return false
+		return false, err
 	}
 	defer statement.Close()
 
 	err = statement.QueryRow(user, filehash).Scan(&hash)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return true
+			return false, nil
 		}
-		return false
+		return false, err
 	}
-	return false
+	return true, nil
 }
 
 // GetAllUserFiles : Returns all files uploaded by user 'username'

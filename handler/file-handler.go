@@ -30,15 +30,14 @@ func UploadHandler(c *gin.Context) {
 		panic(err.Error())
 	}
 
-	var basepath string = config.WholeFileStoreLocation
+	var basepath string = config.WholeFileStoreLocation + head.Filename
 	fileMeta := meta.FileMeta{
 		FileName: head.Filename,
-		Location: basepath + head.Filename,
 		UploadAt: time.Now().Format("2006-01-02 15:04:05"),
 		IsSmall:  true,
 	}
 
-	err = c.SaveUploadedFile(head, fileMeta.Location)
+	err = c.SaveUploadedFile(head, basepath)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"code":  1,
@@ -48,7 +47,7 @@ func UploadHandler(c *gin.Context) {
 		return
 	}
 
-	newFile, err := os.Open(fileMeta.Location)
+	newFile, err := os.Open(basepath)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"code":  1,
@@ -68,8 +67,8 @@ func UploadHandler(c *gin.Context) {
 		})
 		return
 	}
-
 	// update file meta hashmap
+	fileMeta.Location = "aws"
 	fileMeta.FileSize = newFileInfo.Size()
 	fileMeta.FileMD5 = utils.FileMD5(newFile)
 
@@ -100,7 +99,7 @@ func UploadHandler(c *gin.Context) {
 		return
 	}
 
-	uploadAWS, err := aws.UploadToAWS(fileMeta.Location, fileMeta.FileMD5, fileMeta.FileName)
+	uploadAWS, err := aws.UploadToAWS(basepath, fileMeta.FileMD5, fileMeta.FileName)
 	if !uploadAWS {
 		c.JSON(200, gin.H{
 			"code":  1,
@@ -308,42 +307,54 @@ func InstantUpload(c *gin.Context) {
 		})
 		return
 	}
+
+	//first check if user already has file in server
+	username, exist := c.Get("username")
+	if !exist {
+		fmt.Printf("Failed to find username.")
+	}
+	duplicateUserFile, err := db.CheckDuplicateFile(username.(string), fileHash)
+	if err != nil {
+		panic(err.Error())
+	}
+	if duplicateUserFile {
+		c.JSON(200, gin.H{
+			"code": 0,
+			"msg":  "Duplicate file detected",
+			"data": gin.H{
+				"shouldUpload": false,
+			},
+		})
+		return
+	}
+
 	dup, err := db.IsFileUploaded(fileHash)
 	if err != nil {
 		panic(err.Error())
 	}
 	// if the file is already uploaded before
 	if dup {
-		username, exist := c.Get("username")
-		if !exist {
-			fmt.Printf("Failed to find username.")
+		fileName := c.Query("filename")
+		fileInfo := meta.GetFileMeta(fileHash)
+		// update the value `copies` in the database
+		err := db.UpdateCopies(fileHash)
+		if err != nil {
+			panic(err.Error())
 		}
 
-		notDupUserFile := db.CheckForDupe(username.(string), fileHash)
-		if notDupUserFile {
-			// update the value `copies` in the database
-			err := db.UpdateCopies(fileHash)
-			if err != nil {
-				panic(err.Error())
-			}
-			// update successfully
-			c.JSON(200, gin.H{
-				"code": 0,
-				"msg":  "Duplicate file detected",
-				"data": gin.H{
-					"shouldUpload": false,
-				},
-			})
-		} else {
-			// update successfully without incrementing copies
-			c.JSON(200, gin.H{
-				"code": 0,
-				"msg":  "Duplicate file detected",
-				"data": gin.H{
-					"shouldUpload": false,
-				},
-			})
+		// insert new tuple in tbl_userfile
+		_, err = db.OnFileUploadUser(username.(string), fileHash, fileInfo.FileSize, fileName)
+		if err != nil {
+			panic(err.Error())
 		}
+		// update successfully
+		c.JSON(200, gin.H{
+			"code": 0,
+			"msg":  "Duplicate file detected",
+			"data": gin.H{
+				"shouldUpload": false,
+			},
+		})
 		return
 	}
 	// no duplicated file detected
