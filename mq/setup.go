@@ -6,4 +6,5 @@ type TransferData struct {
 	CurLocation  string
 	DestLocation string
 	StoreType    string
+	IsLarge      bool
 }

@@ -2,8 +2,8 @@ package mq
 
 var done chan bool
 
-// consumer needs to keep listening to the message queue to handle requests
-func startConsume(queueName, consumerName string, callback func(msg []byte) bool) {
+// StartConsume : consumer needs to keep listening to the message queue to handle requests
+func StartConsume(queueName, consumerName string, callback func(msg []byte)) {
 	// 1. get message channel
 	msgs, err := channel.Consume(
 		queueName,
@@ -21,13 +21,11 @@ func startConsume(queueName, consumerName string, callback func(msg []byte) bool
 	done = make(chan bool)
 	go func() {
 		for d := range msgs {
-			result := callback(d.Body)
-			if !result {
-				panic(err)
-			}
+			// 3. callback to handle msg
+			callback(d.Body)
 		}
 	}()
-	// 3. callback to handle msg
+
 	<-done
 
 	channel.Close()
