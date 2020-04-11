@@ -5,14 +5,15 @@ import (
 	"os"
 
 	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
 )
 
 //aws configs
 const (
-	AWSS3Region string = "us-east-1"
-	AWSS3Bucket string = "godrive-bucket"
+	AWSS3Region string = "us-east-2"
+	AWSS3Bucket string = "godrive"
 )
 
 var sess *session.Session
@@ -21,7 +22,8 @@ var svc *s3.S3
 func init() {
 	awss, err := session.NewSession(
 		&aws.Config{
-			Region: aws.String(AWSS3Region),
+			Region:      aws.String(AWSS3Region),
+			Credentials: credentials.NewSharedCredentials("", "yinghan"),
 		},
 	)
 	if err != nil {

@@ -380,13 +380,14 @@ func InstantUpload(c *gin.Context) {
 // GetDownloadURL : get the file download url
 func GetDownloadURL(c *gin.Context) {
 	filehash := c.Query("filehash")
+	filename := c.Query("filename")
 	metaInfo, err := meta.GetFileMetaDB(filehash)
 	if err != nil {
 		panic(err.Error())
 	}
 
 	if metaInfo.Location == "aws" {
-		signedURL := aws.GetDownloadURL(filehash)
+		signedURL := aws.GetDownloadURL(filehash, filename)
 		c.Data(200, "octet-stream", []byte(signedURL))
 	} else {
 		tmpURL := fmt.Sprintf("http://%s/api/file/download?filehash=%s",

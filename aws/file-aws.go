@@ -205,12 +205,13 @@ func GetPartList(filehash string, uploadId string) []int {
 }
 
 // GetDownloadURL : get a temporary download signed url by S3
-func GetDownloadURL(filehash string) string {
+func GetDownloadURL(filehash string, filename string) string {
 	// sess := GetSession()
 	// svc := s3.New(sess)
 	req, _ := svc.GetObjectRequest(&s3.GetObjectInput{
-		Bucket: aws.String(AWSS3Bucket),
-		Key:    aws.String(filehash),
+		Bucket:                     aws.String(AWSS3Bucket),
+		Key:                        aws.String(filehash),
+		ResponseContentDisposition: aws.String("attachment;filename=\"" + filename + "\""),
 	})
 	urlStr, err := req.Presign(24 * time.Hour)
 
