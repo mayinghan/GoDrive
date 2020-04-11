@@ -259,8 +259,9 @@ func FileUpdateHandler(c *gin.Context) {
 
 // FileDeleteHandler : delete the file (soft-delete by using a flag)
 func FileDeleteHandler(c *gin.Context) {
-	var filehash string = c.Query("filehash")
-	fileMeta, err := meta.GetFileMetaDB(filehash)
+	var fileHash string = c.Query("filehash")
+	var fileName string = c.Query("filename")
+	fileMeta, err := meta.GetFileMetaDB(fileHash)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"code":  1,
@@ -276,7 +277,7 @@ func FileDeleteHandler(c *gin.Context) {
 		fmt.Printf("Failed to find username.")
 	}
 
-	removeFromDB, delFile := meta.RemoveMetaDB(username.(string), filehash)
+	removeFromDB, delFile := meta.RemoveMetaDB(username.(string), fileHash, fileName)
 	if !removeFromDB {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"code": 1,
@@ -285,7 +286,7 @@ func FileDeleteHandler(c *gin.Context) {
 		return
 	}
 	if delFile {
-		meta.RemoveMeta(filehash)
+		meta.RemoveMeta(fileHash)
 	}
 	os.Remove(fileMeta.Location)
 	c.JSON(http.StatusOK, gin.H{

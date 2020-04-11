@@ -111,8 +111,8 @@ func RemoveMeta(FileMD5 string) {
 }
 
 // RemoveMetaDB removes a file meta from the db (remove success, delete meta)
-func RemoveMetaDB(username string, filesha string) (bool, bool) {
-	succ, err := db.OnFileRemoveUser(username, filesha)
+func RemoveMetaDB(username string, filesha string, filename string) (bool, bool) {
+	succ, err := db.OnFileRemoveUser(username, filesha, filename)
 	if err != nil {
 		fmt.Println(err.Error())
 	}
