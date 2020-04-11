@@ -5,6 +5,7 @@ import (
 	"GoDrive/config"
 	"GoDrive/db"
 	"GoDrive/meta"
+	"GoDrive/timer"
 	"GoDrive/utils"
 	"encoding/json"
 	"fmt"
@@ -108,6 +109,8 @@ func UploadHandler(c *gin.Context) {
 		})
 		return
 	}
+	timer.Elapse = time.Since(timer.StartTime)
+	fmt.Println("ELAPSE TIME: ", timer.Elapse)
 
 	c.JSON(http.StatusOK, gin.H{
 		"code": 0,
@@ -287,6 +290,7 @@ func FileDeleteHandler(c *gin.Context) {
 	}
 	if delFile {
 		meta.RemoveMeta(fileHash)
+		aws.DeleteFromAWS(fileHash)
 	}
 	os.Remove(fileMeta.Location)
 	c.JSON(http.StatusOK, gin.H{
@@ -299,6 +303,8 @@ func FileDeleteHandler(c *gin.Context) {
 // InstantUpload : check if the file is already in the database by comparing the hash.
 // If so, then instant upload is triggered
 func InstantUpload(c *gin.Context) {
+	timer.StartTime = time.Now()
+	fmt.Println("STARTING TIME: ", timer.StartTime)
 	fileHash := c.Query("filehash")
 	fileHash = strings.TrimRight(fileHash, "\n")
 	if fileHash == "" {
@@ -335,6 +341,9 @@ func InstantUpload(c *gin.Context) {
 		}
 		// if same filename, filehash in userfile table
 		if duplicateUserFile {
+			fmt.Print("same file detected uploaded by user")
+			timer.Elapse = time.Since(timer.StartTime)
+			fmt.Println("DUPLICATE user ELAPSE TIME: ", timer.Elapse)
 			c.JSON(200, gin.H{
 				"code": 0,
 				"msg":  "Duplicate file detected",
@@ -344,9 +353,6 @@ func InstantUpload(c *gin.Context) {
 			})
 			return
 		}
-		// if no same filename put the filename to the db
-		db.OnFileUploadUser(username.(string), fileHash, fileInfo.FileSize, fileName)
-
 		// update the value `copies` in the database tbl_file table
 		err = db.UpdateCopies(fileHash)
 		if err != nil {
@@ -358,6 +364,8 @@ func InstantUpload(c *gin.Context) {
 		if err != nil {
 			panic(err.Error())
 		}
+		timer.Elapse = time.Since(timer.StartTime)
+		fmt.Println("DUPLICATE file ELAPSE TIME: ", timer.Elapse)
 		// update successfully
 		c.JSON(200, gin.H{
 			"code": 0,
@@ -368,6 +376,7 @@ func InstantUpload(c *gin.Context) {
 		})
 		return
 	}
+
 	// no duplicated file detected
 	c.JSON(200, gin.H{
 		"code": 0,

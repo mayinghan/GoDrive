@@ -221,3 +221,28 @@ func GetDownloadURL(filehash string, filename string) string {
 
 	return urlStr
 }
+
+//DeleteFromAWS removes file from bucket
+func DeleteFromAWS(filehash string) {
+
+	fileToBeDeleted := &s3.DeleteObjectInput{
+		Bucket: aws.String(AWSS3Bucket),
+		Key:    aws.String(filehash),
+	}
+
+	result, err := svc.DeleteObject(fileToBeDeleted)
+	if err != nil {
+		if aerr, ok := err.(awserr.Error); ok {
+			switch aerr.Code() {
+			default:
+				fmt.Println(aerr.Error())
+			}
+		} else {
+			fmt.Println(err.Error())
+		}
+		return
+	}
+
+	fmt.Println(result)
+
+}
