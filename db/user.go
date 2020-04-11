@@ -30,7 +30,7 @@ type VerifyEmail struct {
 }
 
 // CheckEmail checks against the database for an existing email. Returns a bool and server message
-func CheckEmail(email *VerifyEmail) (bool, string, error) {
+func CheckEmail(email *VerifyEmail) (bool, string) {
 	var compareEmail string
 	userEmail := email.Email
 	stmt, err := mydb.DBConn().Prepare(
@@ -38,7 +38,7 @@ func CheckEmail(email *VerifyEmail) (bool, string, error) {
 	if err != nil {
 		e := fmt.Sprint("Internal server error: Failed to retrieve user from DB")
 		fmt.Println(e + err.Error())
-		return false, e, err
+		return false, e
 	}
 	defer stmt.Close()
 
@@ -47,14 +47,15 @@ func CheckEmail(email *VerifyEmail) (bool, string, error) {
 	if err != nil {
 		if err == sql.ErrNoRows {
 			e = fmt.Sprint("Email has not been used!")
-			return true, e, err
+			return true, e
 		}
 		e = fmt.Sprint("Internal server error")
-		return false, e, err
+		return false, e
 	}
-	e = fmt.Sprint("Internal server error: Email exists.")
-	fmt.Println(e + err.Error())
-	return false, e, err
+	// no error: email exists
+	e = fmt.Sprint("Email already exists. Please use your account to login")
+	fmt.Println(e)
+	return false, e
 
 }
 

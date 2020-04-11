@@ -308,36 +308,46 @@ func InstantUpload(c *gin.Context) {
 		return
 	}
 
-	//first check if user already has file in server
+	// //first check if user already has file in server
 	username, exist := c.Get("username")
 	if !exist {
 		fmt.Printf("Failed to find username.")
 	}
-	duplicateUserFile, err := db.CheckDuplicateFile(username.(string), fileHash)
-	if err != nil {
-		panic(err.Error())
-	}
-	if duplicateUserFile {
-		c.JSON(200, gin.H{
-			"code": 0,
-			"msg":  "Duplicate file detected",
-			"data": gin.H{
-				"shouldUpload": false,
-			},
-		})
-		return
-	}
 
+	// 1. check if file is already in file table
 	dup, err := db.IsFileUploaded(fileHash)
 	if err != nil {
 		panic(err.Error())
 	}
-	// if the file is already uploaded before
+	// if the file is already uploaded by anyone before
 	if dup {
+		// get the filename and the file's meta data in db
 		fileName := c.Query("filename")
-		fileInfo := meta.GetFileMeta(fileHash)
-		// update the value `copies` in the database
-		err := db.UpdateCopies(fileHash)
+		fileInfo, err := meta.GetFileMetaDB(fileHash)
+		if err != nil {
+			panic(err)
+		}
+		// 2. check if the current user uploaded the same file with the same name before
+		duplicateUserFile, err := db.CheckDuplicateUserFile(username.(string), fileHash, fileName)
+		if err != nil {
+			panic(err.Error())
+		}
+		// if same filename, filehash in userfile table
+		if duplicateUserFile {
+			c.JSON(200, gin.H{
+				"code": 0,
+				"msg":  "Duplicate file detected",
+				"data": gin.H{
+					"shouldUpload": false,
+				},
+			})
+			return
+		}
+		// if no same filename put the filename to the db
+		db.OnFileUploadUser(username.(string), fileHash, fileInfo.FileSize, fileName)
+
+		// update the value `copies` in the database tbl_file table
+		err = db.UpdateCopies(fileHash)
 		if err != nil {
 			panic(err.Error())
 		}

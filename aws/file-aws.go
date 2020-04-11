@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"os"
 	"time"
@@ -98,6 +99,7 @@ func InitAWSMpUpload(filehash string, filename string) string {
 func UploadChunkToAws(content io.Reader, filehash string, idx int64, uploadId string) {
 	// sess := GetSession()
 	// svc := s3.New(sess)
+	log.Printf("Uplaoding part %d to aws\n", idx)
 	input := &s3.UploadPartInput{
 		Body:       aws.ReadSeekCloser(content),
 		Bucket:     aws.String(AWSS3Bucket),
