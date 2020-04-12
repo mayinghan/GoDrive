@@ -196,11 +196,11 @@ func GetPartList(filehash string, uploadId string) []int {
 		}
 	}
 
-	var idxList []int
+	idxList := make([]int, 0)
 	for _, part := range result.Parts {
 		idxList = append(idxList, int(*part.PartNumber))
 	}
-
+	log.Printf("uploaded ID LIst: %v\n", idxList)
 	return idxList
 }
 

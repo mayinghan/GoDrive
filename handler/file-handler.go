@@ -275,10 +275,7 @@ func FileDeleteHandler(c *gin.Context) {
 	}
 
 	// getting username
-	username, exist := c.Get("username")
-	if !exist {
-		fmt.Printf("Failed to find username.")
-	}
+	username, _ := c.Get("username")
 
 	removeFromDB, delFile := meta.RemoveMetaDB(username.(string), fileHash, fileName)
 	if !removeFromDB {
@@ -289,7 +286,6 @@ func FileDeleteHandler(c *gin.Context) {
 		return
 	}
 	if delFile {
-		meta.RemoveMeta(fileHash)
 		aws.DeleteFromAWS(fileHash)
 	}
 	os.Remove(fileMeta.Location)
