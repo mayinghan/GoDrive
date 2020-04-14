@@ -22,6 +22,7 @@ func init() {
 	awss, err := session.NewSession(
 		&aws.Config{
 			Region: aws.String(AWSS3Region),
+			//Credentials: credentials.NewSharedCredentials("", "yinghan"),
 		},
 	)
 	if err != nil {

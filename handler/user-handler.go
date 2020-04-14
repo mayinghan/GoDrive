@@ -176,7 +176,7 @@ func SendVerifyEmailHandler(c *gin.Context) {
 		})
 		panic(err)
 	}
-	suc, msg, err := db.CheckEmail(&vrfEmail)
+	suc, msg := db.CheckEmail(&vrfEmail)
 	if suc {
 		// get redis pool connection
 		redisConn := cache.EmailVeriPool().Get()
@@ -192,7 +192,7 @@ func SendVerifyEmailHandler(c *gin.Context) {
 
 		if storedTime != 0 && currTimestamp-int64(storedTime) < config.SendCodeCoolDown {
 			fmt.Println("dont send email again")
-			c.JSON(http.StatusBadRequest, gin.H{
+			c.JSON(200, gin.H{
 				"code": 1,
 				"msg":  "Send request too fast! Please wait " + strconv.FormatInt(config.SendCodeCoolDown+10, 10) + "s to resend the code",
 			})
@@ -210,12 +210,15 @@ func SendVerifyEmailHandler(c *gin.Context) {
 		if err != nil {
 			panic(err)
 		}
+		c.JSON(200, gin.H{
+			"code": 0,
+		})
 	} else {
 		fmt.Println("email already exists")
-		c.JSON(http.StatusBadRequest, gin.H{
-			"code":  1,
-			"msg":   msg,
-			"error": err.Error(),
+		c.JSON(200, gin.H{
+			"code": 1,
+			"msg":  msg,
+			// "error": err.Error(),
 		})
 		return
 	}
@@ -228,8 +231,8 @@ func UserInfo(c *gin.Context) {
 	if exist {
 		fmt.Printf("username: %s\n", username)
 	}
-	token, _ := c.Cookie("token")
-	fmt.Printf("Got user token: %s\n", token)
+	// token, _ := c.Cookie("token")
+	//fmt.Printf("Got user token: %s\n", token)
 	c.JSON(http.StatusOK, gin.H{
 		"code": 0,
 		"msg":  "",

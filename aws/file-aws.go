@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"os"
 	"time"
@@ -98,6 +99,7 @@ func InitAWSMpUpload(filehash string, filename string) string {
 func UploadChunkToAws(content io.Reader, filehash string, idx int64, uploadId string) {
 	// sess := GetSession()
 	// svc := s3.New(sess)
+	log.Printf("Uplaoding part %d to aws\n", idx)
 	input := &s3.UploadPartInput{
 		Body:       aws.ReadSeekCloser(content),
 		Bucket:     aws.String(AWSS3Bucket),
@@ -194,21 +196,22 @@ func GetPartList(filehash string, uploadId string) []int {
 		}
 	}
 
-	var idxList []int
+	idxList := make([]int, 0)
 	for _, part := range result.Parts {
 		idxList = append(idxList, int(*part.PartNumber))
 	}
-
+	log.Printf("uploaded ID LIst: %v\n", idxList)
 	return idxList
 }
 
 // GetDownloadURL : get a temporary download signed url by S3
-func GetDownloadURL(filehash string) string {
+func GetDownloadURL(filehash string, filename string) string {
 	// sess := GetSession()
 	// svc := s3.New(sess)
 	req, _ := svc.GetObjectRequest(&s3.GetObjectInput{
-		Bucket: aws.String(AWSS3Bucket),
-		Key:    aws.String(filehash),
+		Bucket:                     aws.String(AWSS3Bucket),
+		Key:                        aws.String(filehash),
+		ResponseContentDisposition: aws.String("attachment;filename=\"" + filename + "\""),
 	})
 	urlStr, err := req.Presign(24 * time.Hour)
 
@@ -217,4 +220,29 @@ func GetDownloadURL(filehash string) string {
 	}
 
 	return urlStr
+}
+
+//DeleteFromAWS removes file from bucket
+func DeleteFromAWS(filehash string) {
+
+	fileToBeDeleted := &s3.DeleteObjectInput{
+		Bucket: aws.String(AWSS3Bucket),
+		Key:    aws.String(filehash),
+	}
+
+	result, err := svc.DeleteObject(fileToBeDeleted)
+	if err != nil {
+		if aerr, ok := err.(awserr.Error); ok {
+			switch aerr.Code() {
+			default:
+				fmt.Println(aerr.Error())
+			}
+		} else {
+			fmt.Println(err.Error())
+		}
+		return
+	}
+
+	fmt.Println(result)
+
 }

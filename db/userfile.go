@@ -54,15 +54,15 @@ func OnFileUploadUser(username string, filehash string, filesize int64, filename
 }
 
 // OnFileRemoveUser : Use a delete flag to mark resources as deleted but not acctually deleted (change status from 0 to 1)
-func OnFileRemoveUser(username string, filehash string) (bool, error) {
-	fmt.Printf("username %s, filehash: %s", username, filehash)
-	statement, err := mydb.DBConn().Prepare("delete from tbl_userfile where username = ? and hash = ?")
+func OnFileRemoveUser(username string, filehash string, filename string) (bool, error) {
+	fmt.Printf("username %s, filehash: %s, filename: %s", username, filehash, filename)
+	statement, err := mydb.DBConn().Prepare("delete from tbl_userfile where username = ? and hash = ? and filename = ?")
 	if err != nil {
 		fmt.Println("Failed to prepare statement, err: " + err.Error())
 		return false, err
 	}
 	defer statement.Close()
-	results, err := statement.Exec(username, filehash)
+	results, err := statement.Exec(username, filehash, filename)
 	if err != nil {
 		fmt.Println("Failed to delete data from user table, err: " + err.Error())
 		return false, err
@@ -76,6 +76,26 @@ func OnFileRemoveUser(username string, filehash string) (bool, error) {
 		return true, err
 	}
 	fmt.Println("Updated table:", rows)
+	return true, nil
+}
+
+// CheckDuplicateUserFile searches tbl_userfile for existing hash.
+func CheckDuplicateUserFile(user string, filehash string, filename string) (bool, error) {
+	var hash string
+	statement, err := mydb.DBConn().Prepare("select hash from tbl_userfile where username = ? and hash = ? and filename = ?")
+	if err != nil {
+		fmt.Println("Failed to prepare statement, err: " + err.Error())
+		return false, err
+	}
+	defer statement.Close()
+
+	err = statement.QueryRow(user, filehash, filename).Scan(&hash)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return false, nil
+		}
+		return false, err
+	}
 	return true, nil
 }
 

@@ -5,6 +5,7 @@ import (
 	"GoDrive/cache"
 	"GoDrive/config"
 	"GoDrive/meta"
+	"GoDrive/timer"
 	"GoDrive/utils"
 	"fmt"
 	"io/ioutil"
@@ -265,6 +266,9 @@ func CheckIntegrity(c *gin.Context) {
 			IsSmall:  false,
 		}
 		meta.UpdateFileMetaDB(fileMeta, username.(string))
+
+		timer.Elapse = time.Since(timer.StartTime)
+		fmt.Println("ELAPSE TIME: ", timer.Elapse)
 
 	} else {
 		mdhash := new(utils.MD5Stream)
