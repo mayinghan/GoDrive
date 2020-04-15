@@ -16,7 +16,7 @@ var ChunkFileStoreDirectory string
 var DataSourceName string
 
 // StoreMethod : either "AWS" or "Local"
-var StoreMethod string = "AWS"
+var StoreMethod string = "Local"
 
 func init() {
 	if goos == "darwin" {

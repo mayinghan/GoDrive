@@ -1,10 +1,10 @@
 package handler
 
 import (
-	"GoDrive/aws"
 	"GoDrive/cache"
 	"GoDrive/config"
 	"GoDrive/meta"
+	"GoDrive/storage/aws"
 	"GoDrive/timer"
 	"GoDrive/utils"
 	"fmt"
