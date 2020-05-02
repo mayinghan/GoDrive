@@ -4,7 +4,7 @@ import (
 	"GoDrive/config"
 	"GoDrive/db"
 	"GoDrive/meta"
-	"GoDrive/storage/aws"
+	"GoDrive/storage"
 	"GoDrive/timer"
 	"GoDrive/utils"
 	"encoding/json"
@@ -100,7 +100,7 @@ func UploadHandler(c *gin.Context) {
 		return
 	}
 
-	uploadAWS, err := aws.UploadToAWS(basepath, fileMeta.FileMD5, fileMeta.FileName)
+	uploadAWS, err := storage.UploadToAWS(basepath, fileMeta.FileMD5, fileMeta.FileName)
 	if !uploadAWS {
 		c.JSON(200, gin.H{
 			"code":  1,
@@ -286,7 +286,7 @@ func FileDeleteHandler(c *gin.Context) {
 		return
 	}
 	if delFile {
-		aws.DeleteFromAWS(fileHash)
+		storage.DeleteFromAWS(fileHash)
 	}
 	os.Remove(fileMeta.Location)
 	c.JSON(http.StatusOK, gin.H{
@@ -393,7 +393,7 @@ func GetDownloadURL(c *gin.Context) {
 	}
 
 	if metaInfo.Location == "aws" {
-		signedURL := aws.GetDownloadURL(filehash, filename)
+		signedURL := storage.GetDownloadURL(filehash, filename)
 		c.Data(200, "octet-stream", []byte(signedURL))
 	} else {
 		tmpURL := fmt.Sprintf("http://%s/api/file/download?filehash=%s",

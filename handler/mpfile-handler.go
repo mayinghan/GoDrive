@@ -4,7 +4,7 @@ import (
 	"GoDrive/cache"
 	"GoDrive/config"
 	"GoDrive/meta"
-	"GoDrive/storage/aws"
+	"GoDrive/storage"
 	"GoDrive/timer"
 	"GoDrive/utils"
 	"fmt"
@@ -94,7 +94,7 @@ func GetPrevChunks(c *gin.Context) {
 		if err != nil {
 			if err == redis.ErrNil {
 				// no uploadId yet, init the upload process
-				newUploadId := aws.InitAWSMpUpload(filehash, fileName)
+				newUploadId := storage.InitAWSMpUpload(filehash, fileName)
 				// set the AWS uploadId to redis
 				rConn.Do("HSET", "aws", filehash, newUploadId)
 				c.JSON(200, gin.H{
@@ -111,7 +111,7 @@ func GetPrevChunks(c *gin.Context) {
 		}
 		// uploadId exists, resume uploading
 		log.Printf("uploadId: %s\n", uploadId)
-		uploadedIdxList := aws.GetPartList(filehash, uploadId)
+		uploadedIdxList := storage.GetPartList(filehash, uploadId)
 		fmt.Printf("aws uploadId: %s\n", uploadId)
 
 		c.JSON(200, gin.H{
@@ -197,7 +197,7 @@ func GetFileChunk(c *gin.Context) {
 			panic(err)
 		}
 		idx, _ := strconv.Atoi(chunkIdx)
-		aws.UploadChunkToAws(fd, filehash, int64(idx+1), awsUploadId)
+		storage.UploadChunkToAws(fd, filehash, int64(idx+1), awsUploadId)
 
 		c.JSON(200, gin.H{
 			"code": 0,
@@ -247,7 +247,7 @@ func CheckIntegrity(c *gin.Context) {
 		if err != nil {
 			panic(err)
 		}
-		aws.CompleteAWSPartUpload(fileHash, awsUploadId)
+		storage.CompleteAWSPartUpload(fileHash, awsUploadId)
 		// delete uploadId key from redis
 		rConn := cache.ChunkPool().Get()
 		defer rConn.Close()
