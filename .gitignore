@@ -1,5 +1,6 @@
 .vscode/
 .idea/
-
 gin-bin
 *.exe
+/config/credentials.json
+/config/token.json

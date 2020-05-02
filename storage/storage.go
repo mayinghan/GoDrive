@@ -109,6 +109,7 @@ func UploadChunkToAws(content io.Reader, filehash string, idx int64, uploadId st
 	}
 
 	_, err := svc.UploadPart(input)
+	log.Printf("Uploading part %d DONE\n", idx)
 	if err != nil {
 		if aerr, ok := err.(awserr.Error); ok {
 			switch aerr.Code() {
